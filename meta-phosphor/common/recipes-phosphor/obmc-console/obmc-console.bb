@@ -9,12 +9,12 @@ inherit autotools
 
 TARGET_CFLAGS   += "-fpic -O2"
 
-SRC_URI += "git://github.com/ken1029/obmc-console"
+SRC_URI += "git://github.com/foxconn-bmc-ks/obmc-console"
 SRC_URI += "file://${PN}.conf \
 	    file://obmc-console-ssh.socket \
 	    file://obmc-console-ssh@.service"
 
-SRCREV = "90663cbfa3a8bfe2a102684174d83007e78ffbed"
+SRCREV = "6e7648b71b780f172241b9c5212b227bd2d5855c"
 
 FILES_${PN} += "${systemd_unitdir}/system/obmc-console-ssh@.service \
 		${systemd_unitdir}/system/obmc-console-ssh.socket"
