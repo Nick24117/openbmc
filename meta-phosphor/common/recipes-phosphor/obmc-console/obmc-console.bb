@@ -9,7 +9,8 @@ inherit autotools
 
 TARGET_CFLAGS   += "-fpic -O2"
 
-SRC_URI += "git://github.com/foxconn-bmc-ks/obmc-console"
+FOXCONN_BRANCH = "foxconn-yja"
+SRC_URI += "git://github.com/foxconn-bmc-ks/obmc-console;branch=${FOXCONN_BRANCH}"
 SRC_URI += "file://${PN}.conf \
 	    file://obmc-console-ssh.socket \
 	    file://obmc-console-ssh@.service"

@@ -6,7 +6,8 @@ inherit setuptools
 inherit pythonnative
 
 DEPENDS += "python"
-SRC_URI += "git://github.com/foxconn-bmc-ks/skeleton;subpath=configs"
+FOXCONN_BRANCH = "foxconn-yja"
+SRC_URI += "git://github.com/foxconn-bmc-ks/skeleton;subpath=configs;branch=${FOXCONN_BRANCH}"
 S = "${WORKDIR}/configs"
 
 python() {

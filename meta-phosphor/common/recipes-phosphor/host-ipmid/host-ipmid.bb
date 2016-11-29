@@ -17,7 +17,8 @@ TARGET_CFLAGS   += "-fpic"
 RDEPENDS_${PN} += "clear-once"
 RDEPENDS_${PN} += "settings"
 RDEPENDS_${PN} += "network"
-SRC_URI += "git://github.com/foxconn-bmc-ks/phosphor-host-ipmid"
+FOXCONN_BRANCH = "foxconn-yja"
+SRC_URI += "git://github.com/foxconn-bmc-ks/phosphor-host-ipmid;branch=${FOXCONN_BRANCH}"
 
 SRCREV = "0cb750087a17de5b726c280bed464d3084ad028a"
 
