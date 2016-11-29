@@ -19,7 +19,7 @@ RDEPENDS_${PN} += "settings"
 RDEPENDS_${PN} += "network"
 SRC_URI += "git://github.com/foxconn-bmc-ks/phosphor-host-ipmid"
 
-SRCREV = "ffd93f92813798335757fde598be6157b780a8af"
+SRCREV = "0cb750087a17de5b726c280bed464d3084ad028a"
 
 S = "${WORKDIR}/git"
 INSTALL_NAME = "ipmid"
