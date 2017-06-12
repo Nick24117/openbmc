@@ -20,7 +20,6 @@ VIRTUAL-RUNTIME_obmc-phosphor-flash-ctl = " \
        skeleton \
        "
 VIRTUAL-RUNTIME_obmc-phosphor-ipmi-parsers = " \
-        host-ipmid-oem \
         host-ipmid-fru \
        "
 VIRTUAL-RUNTIME_skeleton_workbook = "${MACHINE}-config"
