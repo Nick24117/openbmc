@@ -1,6 +1,6 @@
 DESCRIPTION = "IPMI over LAN (RMCP/IPMIv1.5) Server"
 
-HOMEPAGE = "https://github.com/ken1029/fru-util"
+HOMEPAGE = "https://github.com/foxconn-bmc-ks/fru-util"
 LICENSE = "Microsoft"
 
 DEPENDS += "zlog"
@@ -15,8 +15,8 @@ INHIBIT_PACKAGE_DEBUG_SPLIT = "1"
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
-SRC_URI = "git://github.com/ken1029/fru-util"
-SRCREV = "9c171002298689d29fcadd1b48794f25aa8ddacb"
+SRC_URI = "git://github.com/foxconn-bmc-ks/fru-util"
+SRCREV = "d70468a1d1c16f992f162f0c2633b5fba80a3e65"
 S = "${WORKDIR}/git"
 
 do_compile() {
