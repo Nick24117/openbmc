@@ -11,8 +11,6 @@
 # - obmc-phosphor-user-mgmt           - Phosphor OpenBMC user management
 # - obmc-phosphor-system-mgmt         - Phosphor OpenBMC system management
 
-RRECOMMENDS_${PN} += "${VIRTUAL-RUNTIME_obmc-phosphor-ipmi-parsers}"
-
 inherit core-image
 inherit obmc-phosphor-license
 
@@ -43,6 +41,7 @@ CORE_IMAGE_EXTRA_INSTALL_append = " bash \
         i2c-tools \
         screen \
         inarp \
+        host-ipmid-fru \
         obmc-console \
         ${OBMC_IMAGE_EXTRA_INSTALL} \
         "
