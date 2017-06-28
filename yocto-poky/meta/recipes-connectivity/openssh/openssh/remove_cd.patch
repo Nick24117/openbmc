@@ -4,7 +4,7 @@
  	Attrib attrib;
  };
  
-+#define MSHOME "/run/initramfs"
++#define MSHOME "/var/wcs/home"
 +
  /* Packet handlers */
  static void process_open(u_int32_t id);
