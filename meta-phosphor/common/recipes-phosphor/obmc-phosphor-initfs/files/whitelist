@@ -7,3 +7,6 @@
 /etc/shadow
 /etc/gshadow
 /var/cache/obmc
+/var/lib/obmc/fw_update_complete
+/var/lib/obmc/check_reboot
+
