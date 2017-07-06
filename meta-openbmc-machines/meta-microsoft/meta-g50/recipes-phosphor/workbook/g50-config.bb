@@ -3,6 +3,6 @@ DESCRIPTION = "Board wiring information for the G50 system."
 HOMEPAGE = "git://csibmc@csibmc.visualstudio.com:22/G50/_git/skeleton;protocol=ssh;"
 PR = "r1"
 
-SRCREV = "c98dab8b9ac53788b3983acf11185c29c00926bc"
+SRCREV = "5b86bf3848cd328e6929fa3666e4f98a6096d675"
 inherit config-in-skeleton
 inherit obmc-phosphor-license
