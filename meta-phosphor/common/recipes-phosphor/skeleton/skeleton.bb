@@ -28,7 +28,7 @@ FILES_${PN} += "${PYTHON_SITEPACKAGES_DIR}/*"
 PACKAGECONFIG ??= "${@bb.utils.contains('MACHINE_FEATURES', 'openpower-pflash', 'openpower-pflash', '', d)}"
 PACKAGECONFIG[openpower-pflash] = ",,,pflash"
 
-SRCREV = "5b86bf3848cd328e6929fa3666e4f98a6096d675"
+SRCREV = "e0e77e4a1947fec05151dc232d2aa3dab950878c"
 
 S = "${WORKDIR}"
 
