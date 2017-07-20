@@ -1,0 +1,16 @@
+#**************************************************************
+#*                                                            *
+#*   Copyright (C) Microsoft Corporation. All rights reserved.*
+#*                                                            *
+#**************************************************************
+[Unit]
+Description=OpenBMC Fast Firmware Monitoring
+Before=shutdown.target
+[Service]
+Type=oneshot
+RemainAfterExit=true
+ExecStop=/usr/sbin/check_image.sh
+
+[Install]
+WantedBy=multi-user.target
+

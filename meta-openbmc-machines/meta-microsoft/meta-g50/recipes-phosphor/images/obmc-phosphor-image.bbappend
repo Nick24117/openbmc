@@ -5,3 +5,4 @@ EXTRA_USERS_PARAMS = " \
   usermod -L root; \
   "
 OBMC_IMAGE_EXTRA_INSTALL_append = " oob-ipmid"
+OBMC_IMAGE_EXTRA_INSTALL_append = " wcs-image"
