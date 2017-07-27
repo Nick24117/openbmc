@@ -31,7 +31,6 @@ IMAGE_FEATURES += " \
         obmc-phosphor-flash-mgmt \
         obmc-phosphor-event-mgmt \
         obmc-phosphor-policy-mgmt \
-        obmc-phosphor-user-mgmt \
         obmc-phosphor-system-mgmt \
         "
 

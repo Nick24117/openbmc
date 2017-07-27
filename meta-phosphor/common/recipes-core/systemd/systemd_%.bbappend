@@ -14,5 +14,5 @@ do_install_append() {
 
         #TODO Remove after this issue is resolved
         #https://github.com/openbmc/openbmc/issues/152
-        ln -s /dev/null ${D}/etc/systemd/system/systemd-hwdb-update.service
+        #ln -s /dev/null ${D}/etc/systemd/system/systemd-hwdb-update.service
 }
