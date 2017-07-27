@@ -1,4 +1,4 @@
 LINUX_VERSION ?= "4.7"
-SRCREV="d7e47f84ba4f358598d0a1b48ff652bed063d7f8"
+SRCREV="481e54d872e84573ac9a9be4e3aea429d4c05649"
 
 require common/recipes-kernel/linux/linux-obmc.inc
