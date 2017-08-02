@@ -10,13 +10,16 @@ if [[ ("$result" == *"Hashkey valid"*) || ("$result" == *"Unsigned Firmware is a
     then
         echo "Found Primary G50-BMC FW-Image:" $bmc_fw
         mv -f $bmc_fw /run/initramfs/
+        exit 0
     fi
 
     if test -e $bmc1_fw && test -f $bmc1_fw
     then
         echo "Found Secondary G50-BMC FW-Image:" $bmc1_fw
         mv -f $bmc1_fw /run/initramfs/
+        exit 0
     fi
 else
     echo "BMC Firmware is not available."
+    exit 1
 fi
