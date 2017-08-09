@@ -8,6 +8,8 @@ SRC_URI += "file://0101-add_watchdog_check_file_before_reboot.patch"
 FILES_${PN} += "${libdir}/systemd/network/default.network"
 FILES_${PN} += "${libdir}/systemd/system.conf.d/shutdown-watchdog.conf"
 
+EXTRA_OECONF += " --disable-hwdb"
+
 do_install_append() {
         install -m 644 ${WORKDIR}/default.network ${D}${libdir}/systemd/network/
         install -m 644 -D ${WORKDIR}/shutdown-watchdog.conf ${D}${libdir}/systemd/system.conf.d/shutdown-watchdog.conf
