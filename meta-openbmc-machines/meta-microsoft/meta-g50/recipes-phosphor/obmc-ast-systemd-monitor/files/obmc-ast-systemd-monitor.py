@@ -44,8 +44,9 @@ def check_is_main_service(file):
     except:
         return None
 
-def scanServiceList(service_list = {}):
+def scanServiceList():
     count = 0
+    service_list = {}
     proc_list = os.listdir("/proc/")
     #scan /proc/[pid] status
     for file in proc_list:
@@ -66,13 +67,18 @@ class MonitorSystemd():
         with open(TEMP_MONITOR_FILE, 'w+') as f:
             for key in self.service_status:
                 f.write(key+";"+self.service_status[key]+"\n")
+            for key in self.service_delete:
+                f.write(key+";"+self.service_delete[key]+"\n")
 
     def restoreCaheFile(self):
         try:
             with open(TEMP_MONITOR_FILE, 'r') as f:
                 for line in f:
                     val_a = line.rstrip('\n').split(";")
-                    self.service_status[val_a[0]] = val_a[1]
+                    if val_a[0].find("-delete") >=0:
+                        self.service_delete[val_a[0]] = val_a[1]
+                    else:
+                        self.service_status[val_a[0]] = val_a[1]
         except:
             pass
 
