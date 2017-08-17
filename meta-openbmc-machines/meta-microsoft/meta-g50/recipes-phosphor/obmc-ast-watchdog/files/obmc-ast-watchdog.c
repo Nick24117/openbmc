@@ -10,67 +10,120 @@
 #include <sys/ioctl.h>
 #include <linux/watchdog.h>
 
-#define WATCHDOG_MODULE		"/dev/watchdog"
+#define WATCHDOG_MODULE     "/dev/watchdog"
 
+#define WATCH_MISS_THRESHOLD  (10)
+#define MAX_RETRY_SYSTEM_STABLE (30)
+#define MAX_LEN_FILE_NAME (50)
 
-#define WATCH_MISS_THRESHOLD 5
-
-enum{
-    WATCH_REDFISH,
-    WATCH_HWMON,
-    WATCH_EVENT_SERVICE,
-    WATCH_COUNT
+enum em_watch_type{
+    EM_WATCH_REDFISH = 0,
+    EM_WATCH_HWMON,
+    EM_WATCH_EVENT_SERVICE,
+    EM_WATCH_COUNT
 };
 
-const char *WATCH_FILE_PATH[] = {
-    [WATCH_REDFISH]        = "/var/lib/obmc/watch_redfish",
-    [WATCH_HWMON]          = "/var/lib/obmc/watch_hwmon",
-    [WATCH_EVENT_SERVICE]  = "/var/lib/obmc/watch_event_service",
+struct st_watch_record {
+    enum em_watch_type type;
+    char file_path[MAX_LEN_FILE_NAME];
+    unsigned int miss_count;
 };
+
+struct st_watch_record  g_watch_tab[EM_WATCH_COUNT] = {
+    {EM_WATCH_REDFISH, "/run/obmc/watch_redfish", 0},
+    {EM_WATCH_HWMON, "/run/obmc/watch_hwmon", 0},
+    {EM_WATCH_EVENT_SERVICE, "/run/obmc/watch_event_service", 0},
+};
+
+static void create_new_watch_file(char *path)
+{
+    FILE *fp = NULL;
+    if (path == NULL)
+        return;
+    fp = fopen(path, "w+");
+    if (fp != NULL)
+        fclose(fp);
+}
+
+//@return: 1-success to check watch file; 0-it is abnormal to check watch file
+static int check_watch_file_status()
+{
+    int i; 
+    for (i = 0; i<EM_WATCH_COUNT; i++)
+    {
+        if( access( g_watch_tab[i].file_path, F_OK ) == -1 )
+        {
+            g_watch_tab[i].miss_count = 0;
+            create_new_watch_file( g_watch_tab[i].file_path);
+        }
+        else
+        {
+            g_watch_tab[i].miss_count+=1;
+            if(g_watch_tab[i].miss_count > WATCH_MISS_THRESHOLD)
+                return 0;
+        }
+    }
+    return 1;
+}
+
+//@return: 1-success for system stable; 0-it is abnormal for system stable
+static int wait_system_stable()
+{
+    int rety = 0;
+    int i;
+
+    //create all watch file
+    for (i = 0; i<EM_WATCH_COUNT; i++)
+        create_new_watch_file(g_watch_tab[i].file_path);
+
+    //wait and check all task is alive to delete relative watch file
+    for (rety = 0; rety<MAX_RETRY_SYSTEM_STABLE; rety++)
+    {
+        for (i = 0; i<EM_WATCH_COUNT; i++)
+            if( access( g_watch_tab[i].file_path, F_OK ) != -1 )
+                break;
+        //check all releate watch files are deleted
+        if (i == EM_WATCH_COUNT)
+            return 1;
+        sleep(5);
+    }
+    return 0;
+}
 
 void main()
 {
-    static char watch[WATCH_COUNT] = {0};
-    char watchMissCount = 0;
-    int i, c = 0;
-    FILE *fp = NULL;
-	int fd = open(WATCHDOG_MODULE, O_RDWR);
-	
-	printf("\nStart Watchdog ... \n");	
-	
-	if(fd < 0)	
-	{
-		printf("open '%s' error!\n", WATCHDOG_MODULE);
-		return;
-	}
-	
-	while(1)
-	{
-        watchMissCount = 0;
-        for(i=0; i<WATCH_COUNT; ++i){
-            fp = fopen(WATCH_FILE_PATH[i], "r");
-            if(fp == NULL){
-                watch[i] = 0;
-                fp = fopen(WATCH_FILE_PATH[i], "w+");
-            }else{
-                if(watch[i] < WATCH_MISS_THRESHOLD){
-                    watch[i]++;
-                }else{
-                    watchMissCount++;
-                }
-                printf("@@@ check %s exist, watch[%d] = %d, watchMissCount = %d\n", WATCH_FILE_PATH[i], i, watch[i], watchMissCount);
-            }
-            fclose(fp);
-        }
+    struct stat st = {0};
+    int fd = -1;
 
-        if(watchMissCount == 0){
+    //check and create /run/obmc/ directory
+    if (stat("/run/obmc/", &st) == -1) {
+        mkdir("run/obmc/", 0755);
+    }
+
+    if (wait_system_stable() == 0)
+    {
+        printf("\nDisable Watchdog for system stable timeout !!\n");  
+        return;
+    }
+
+    fd = open(WATCHDOG_MODULE, O_RDWR);
+    if(fd < 0)
+    {
+        printf("open '%s' error!\n", WATCHDOG_MODULE);
+        return;
+    }
+
+    printf("\nStart Watchdog ... \n");  
+    while(1)
+    {
+        if(check_watch_file_status() == 1){
             //default hardware watchdog timeout is 30 seconds
             if(ioctl(fd, WDIOC_KEEPALIVE) < 0){
                 printf("WDIOC_KEEPALIVE IOCTL error!\n");
             }
         }
-		sleep(5);		
-	}
-
-	return;
+        sleep(5);       
+    }
+    close(fd);
+    return;
 }

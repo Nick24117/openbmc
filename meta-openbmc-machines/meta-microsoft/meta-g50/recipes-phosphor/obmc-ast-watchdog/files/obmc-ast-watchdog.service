@@ -8,8 +8,8 @@
 Description=OpenBMC Hardware Watchdog
 
 [Service]
-ExecStart={sbindir}/obmc-ast-watchdog
+ExecStart=@SBINDIR@/obmc-ast-watchdog
 Restart=always
 
 [Install]
-WantedBy={SYSTEMD_DEFAULT_TARGET}
+WantedBy=multi-user.target
