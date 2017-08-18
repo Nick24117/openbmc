@@ -6,7 +6,7 @@ import gobject
 import dbus.mainloop.glib
 import bmchealth_handler
 
-MONITOR_POLL_INTERVAL = 1000
+MONITOR_POLL_INTERVAL = 10000
 TEMP_MONITOR_FILE = "/tmp/monitor_systemd_cache"
 
 def check_is_pid(filename):
