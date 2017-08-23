@@ -10,6 +10,6 @@ inherit setuptools
 
 SRC_URI += "git://csibmc@csibmc.visualstudio.com:22/G50/_git/pyphosphor;protocol=ssh;"
 
-SRCREV = "c60ba254bfb11321a1b99a7dd857e237e33bc132"
+SRCREV = "6966b6b1a85751b9bfc1b53bd216bc0e959b952b"
 
 S = "${WORKDIR}/git"
