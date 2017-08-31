@@ -5,7 +5,7 @@ SECTION = "bootloader"
 
 DEPENDS = "openssl"
 
-SRCREV = "7be4b11a76537a04f73ed5d9fda0102e3a8b145f"
+SRCREV = "2b840a28a19311af6d50dc49279e009ace5acc77"
 UBRANCH = "foxconn-v2016.07-aspeed-openbmc"
 SRC_URI = "git://git@github.com/foxconn-bmc-ks/u-boot.git;branch=${UBRANCH};protocol=https"
 
