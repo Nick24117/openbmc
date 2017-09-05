@@ -25,6 +25,7 @@ RDEPENDS_${PN} += "\
         sdbusplus \
         phosphor-dbus-interfaces \
         phosphor-logging \
+        bash \
         "
 
 RRECOMMENDS_${PN} += "${VIRTUAL-RUNTIME_phosphor-hwmon-config}"
@@ -36,6 +37,7 @@ FOXCONN_BRANCH="foxconn-g2"
 SRC_URI += "git://github.com/foxconn-bmc-ks/phosphor-hwmon;branch=${FOXCONN_BRANCH}"
 SRC_URI += "file://70-hwmon.rules"
 SRC_URI += "file://70-iio.rules"
+SRC_URI += "file://start_hwmon.sh"
 
 SRCREV = "f2dc6100fc439fa0da825ce2c81aa1834a97effc"
 
@@ -46,4 +48,7 @@ do_install_append() {
         install -d ${D}/${base_libdir}/udev/rules.d/
         install ${WORKDIR}/70-hwmon.rules ${D}/${base_libdir}/udev/rules.d/
         install ${WORKDIR}/70-iio.rules ${D}/${base_libdir}/udev/rules.d/
+
+        install -d ${D}${bindir}
+        install -m 0755 ${WORKDIR}/start_hwmon.sh ${D}${bindir}
 }
