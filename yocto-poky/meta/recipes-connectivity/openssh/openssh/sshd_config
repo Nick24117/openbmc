@@ -35,8 +35,8 @@ Protocol 2
 
 # Logging
 # obsoletes QuietMode and FascistLogging
-SyslogFacility AUTH
-LogLevel INFO
+SyslogFacility AUTHPRIV
+LogLevel VERBOSE
 
 # Authentication:
 
