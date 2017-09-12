@@ -1,9 +1,17 @@
 [Unit]
-Description=OpenBMC console daemon
+Description=Redfish
 
 [Service]
-ExecStart=/usr/lib/run_redfish.sh
+Type=simple
+Nice=-20
+WorkingDirectory=/usr/lib/redfish
+Environment=WATCHDOG_FILE=/run/obmc/redfish_start
+ExecStartPre=/bin/mkdir -p /run/obmc
+ExecStartPre=/bin/echo 0 > /run/obmc/redfish_start
+# 10 + 1 threads, the one extra thread is used to send 429 TOO_MANY_REQUEST response
+ExecStart=/usr/bin/uwsgi --https :443,/usr/lib/cert.pem,/usr/lib/cert.pem --wsgi-file run_redfish.py --callable app --processes 1 --threads 11
 Restart=always
+KillSignal=SIGQUIT
 
 [Install]
 WantedBy=multi-user.target
