@@ -13,7 +13,7 @@ inherit autotools
 
 BB_NO_NETWORK = "0"
 
-RDEPENDS_${PN} = "bash python"
+RDEPENDS_${PN} = "bash python python-mime python-pprint python-re"
 
 SRC_URI = "git://csibmc@csibmc.visualstudio.com:22/G50/_git/redfish;protocol=ssh;"
 SRCREV="e195858a34def4dc0c1d9318912dc0f10b2a0f61"
