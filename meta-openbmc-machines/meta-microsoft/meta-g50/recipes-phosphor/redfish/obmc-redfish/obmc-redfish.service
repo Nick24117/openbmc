@@ -1,5 +1,7 @@
 [Unit]
 Description=Redfish
+Requires=obmc-phosphor-event.service
+After=obmc-phosphor-event.service
 
 [Service]
 Type=simple
