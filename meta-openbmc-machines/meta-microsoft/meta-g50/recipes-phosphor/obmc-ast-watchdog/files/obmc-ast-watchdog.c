@@ -5,9 +5,12 @@
 *************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
 #include <linux/watchdog.h>
 
 #define WATCHDOG_MODULE     "/dev/watchdog"
@@ -90,10 +93,24 @@ static int wait_system_stable()
     return 0;
 }
 
+static void save_pid (void) {
+    pid_t pid = 0;
+    FILE *pidfile = NULL;
+    pid = getpid();
+    if (!(pidfile = fopen("/run/obmc-ast-watchdog.pid", "w"))) {
+        fprintf(stderr, "failed to open pidfile\n");
+        return;
+    }
+    fprintf(pidfile, "%d\n", pid);
+    fclose(pidfile);
+}
+
 void main()
 {
     struct stat st = {0};
     int fd = -1;
+
+    save_pid();
 
     //check and create /run/obmc/ directory
     if (stat("/run/obmc/", &st) == -1) {
