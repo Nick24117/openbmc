@@ -1,0 +1,32 @@
+diff --git a/console-server.c b/console-server.c
+index 45dd07a..bc4830a 100644
+--- a/console-server.c
++++ b/console-server.c
+@@ -501,6 +501,18 @@ static const struct option options[] = {
+ 	{ 0,  0, 0, 0},
+ };
+ 
++static void save_pid (void) {
++	pid_t pid = 0;
++	FILE *pidfile = NULL;
++	pid = getpid();
++	if (!(pidfile = fopen("/run/obmc-console-server.pid", "w"))) {
++		fprintf(stderr, "failed to open pidfile\n");
++		return;
++	}
++	fprintf(pidfile, "%d\n", pid);
++	fclose(pidfile);
++}
++
+ int main(int argc, char **argv)
+ {
+ 	const char *config_filename = NULL;
+@@ -528,6 +540,8 @@ int main(int argc, char **argv)
+ 		}
+ 	}
+ 
++	save_pid();
++
+ 	console = malloc(sizeof(struct console));
+ 	memset(console, 0, sizeof(*console));
+ 	console->pollfds = calloc(n_internal_pollfds,

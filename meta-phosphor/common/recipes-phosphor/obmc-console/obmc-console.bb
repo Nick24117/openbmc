@@ -12,7 +12,9 @@ TARGET_CFLAGS   += "-fpic -O2"
 SRC_URI += "git://github.com/openbmc/obmc-console"
 SRC_URI += "file://${PN}.conf \
 	    file://obmc-console-ssh.socket \
-	    file://obmc-console-ssh@.service"
+	    file://obmc-console-ssh@.service \
+        file://001-save_pid.patch \
+        "
 
 SRCREV = "bc1e893375e4887ef7676c5738779c4a2f5b1935"
 
