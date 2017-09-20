@@ -1,109 +1,125 @@
 #!/usr/bin/python -u
-
-import sys
+# pylint: disable=missing-docstring
 import os
-import gobject
-import dbus.mainloop.glib
-import bmchealth_handler
+import sys
+import time
+import traceback
 
-MONITOR_POLL_INTERVAL = 10000
-TEMP_MONITOR_FILE = "/tmp/monitor_systemd_cache"
+import obmc.events
 
-def check_is_pid(filename):
-    try:
-        val = int(filename)
-    except:
-        return 0
-    return 1
+class Process(object):
+    PID_UNKNOWN = -1
 
-def check_is_main_service(file):
-    try:
-        cgroup_path = "/proc/"+file+"/cgroup"
-        cgroup = ""
-        with open(cgroup_path, "r") as f:
-            for line in f:
-                cgroup = line.rstrip('\n')
-        comm_path = "/proc/"+file+"/comm"
-        comm = ""
-        with open(comm_path, "r") as f:
-            for line in f:
-                comm = line.rstrip('\n')
-        if comm == "sh":
-            return None
-        service_name = cgroup.split("/")[-1]
-        if service_name == "":
-            return None
-        service_path = "/lib/systemd/system/"+service_name
-        service_content = ""
-        with open(service_path, "r") as f:
-            service_content = f.read()
-        if service_content.find(comm)>=0:
-            return [service_name, comm]
-        else:
-            return None
-    except:
-        return None
+    def __init__(self, uid, name, pidfile):
+        self._uid = uid
+        self._name = name
+        self._pidfile = pidfile
+        self._previous_pid = self.PID_UNKNOWN
+        self._current_pid = self.PID_UNKNOWN
+        self._first_run = True
 
-def scanServiceList():
-    count = 0
-    service_list = {}
-    proc_list = os.listdir("/proc/")
-    #scan /proc/[pid] status
-    for file in proc_list:
-        if check_is_pid(file) == 1:
-            item = check_is_main_service(file)
-            if item != None:
-                service_list[file] = item
-    return service_list
+    def _restarted(self):
+        '''
+        A running process is considered restarted if it changes PID.
 
-class MonitorSystemd():
-    def __init__(self):
-        self.service_status = {}
-        self.service_delete={}
-        self.restoreCaheFile()
-        gobject.timeout_add(MONITOR_POLL_INTERVAL, self.monitorService)
+        NOTE a dead process is not considered restarted.
+        '''
+        if self._current_pid == self.PID_UNKNOWN:
+            return False
+        return self._previous_pid != self._current_pid
 
-    def saveCaheFile(self):
-        with open(TEMP_MONITOR_FILE, 'w+') as f:
-            for key in self.service_status:
-                f.write(key+";"+self.service_status[key]+"\n")
-            for key in self.service_delete:
-                f.write(key+";"+self.service_delete[key]+"\n")
+    def _save_pid(self):
+        self._previous_pid = self._current_pid
 
-    def restoreCaheFile(self):
+    def _update_pid(self):
+        is_running = False
         try:
-            with open(TEMP_MONITOR_FILE, 'r') as f:
-                for line in f:
-                    val_a = line.rstrip('\n').split(";")
-                    if val_a[0].find("-delete") >=0:
-                        self.service_delete[val_a[0]] = val_a[1]
-                    else:
-                        self.service_status[val_a[0]] = val_a[1]
-        except:
+            if os.access(self._pidfile, os.R_OK):
+                with open(self._pidfile) as pfile:
+                    pid = int(pfile.read())
+                cmdline = '/proc/%d/cmdline' % pid
+                if os.access(cmdline, os.R_OK):
+                    is_running = True
+        except IOError:
+            # If pidfile doesn't exist yet, so be it.
             pass
+        if is_running:
+            self._current_pid = pid
+            self._first_run = False
+        else:
+            self._current_pid = self.PID_UNKNOWN
 
-    def monitorService(self):
-        srv_list = scanServiceList()
-        for key in srv_list:
-            key_map_str = srv_list[key][0] + "-" + srv_list[key][1]
-            if key_map_str in self.service_status:
-                if self.service_status[key_map_str] != key and \
-                (key_map_str+"-delete" not in self.service_delete or self.service_delete[key_map_str+"-delete"] != key):
-                    bmchealth_handler.LogEventBmcHealthMessages("Asserted", "BMC Service Restarted", \
-                            data={'service_id_low':int(key)&0xff, 'service_id_high':(int(key)>>8)&0xff})
-                    self.service_delete[key_map_str+"-delete"] = self.service_status[key_map_str]
-                    self.service_status[key_map_str] = key
-            else:
-                self.service_status[key_map_str] = key
-                self.service_delete[key_map_str+"-delete"] = ""
-        self.saveCaheFile()
-        return True
+    def name(self):
+        return self._name
+
+    def restarted(self):
+        if self._first_run:
+            self._update_pid()
+            restarted = False
+            self._save_pid()
+        else:
+            self._update_pid()
+            restarted = self._restarted()
+            self._save_pid()
+        return restarted
+
+    def uid(self):
+        return self._uid
+
+def _emit_event(process):
+    event_manager = obmc.events.EventManager()
+    event = obmc.events.Event.from_binary(
+        obmc.events.Event.SEVERITY_WARN,
+        sensor_type=0x28,
+        sensor_number=0x82,
+        event_dir_type=0x70,
+        event_data_1=0xA0,
+        event_data_2=process.uid(),
+    )
+    record_id = event_manager.create(event)
+    if record_id != 0:
+        print '[INFO] detected %s restarted, a SEL is created' % (
+            process.name(),
+        )
+    else:
+        print '[INFO] detected %s restarted, but failed to add SEL' % (
+            process.name(),
+        )
+
+def _main():
+    # NOTE if UID is changed, obmc/events.py must change accordingly.
+    processes = (
+        Process(1, 'obmc-redfish', '/run/obmc-redfish.pid'),
+        Process(2, 'obmc-phosphor-event', '/run/obmc-phosphor-event.pid'),
+        Process(3, 'oob-ipmid', '/run/oob-ipmid.pid'),
+        Process(4, 'obmc-console-server', '/run/obmc-console-server.pid'),
+        Process(5, 'hwmon', '/run/hwmon.pid'),
+        Process(6, 'fan_algorithm', '/run/fan_algorithm.pid'),
+        Process(7, 'bmchealth_handler', '/run/bmchealth_handler.pid'),
+        Process(8, 'obmc-ast-watchdog', '/run/obmc-ast-watchdog.pid'),
+        Process(9, 'cable_led', '/run/cable_led.pid'),
+        Process(10, 'button_id', '/run/button_id.pid'),
+        Process(11, 'power_control_sthelens', '/run/power_control_sthelens.pid'),
+        Process(12, 'chassis_control', '/run/chassis_control.pid'),
+        Process(13, 'pex_core', '/run/pex_core.pid'),
+        Process(14, 'pmbus_scanner', '/run/pmbus_scanner.pid'),
+        Process(15, 'gpu_core', '/run/gpu_core.pid'),
+        Process(16, 'pcie-device-temperature', '/run/pcie-device-temperature.pid'),
+        Process(17, 'led_controller', '/run/led_controller.pid'),
+        Process(18, 'control_bmc', '/run/control_bmc.pid'),
+        Process(19, 'fan_generic_obj', '/run/fan_generic_obj.pid'),
+    )
+    while True:
+        for process in processes:
+            try:
+                if process.restarted():
+                    _emit_event(process)
+            except StandardError:
+                print >>sys.stderr, '[ERROR] failed to check %s' % (
+                    process.name(),
+                )
+                traceback.print_exc()
+        time.sleep(10)
 
 if __name__ == '__main__':
-    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-    root_sensor = MonitorSystemd()
-    mainloop = gobject.MainLoop()
-
-    print "Starting to Monitor Systemd"
-    mainloop.run()
-
+    _main()
