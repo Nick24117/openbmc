@@ -38,7 +38,6 @@ CORE_IMAGE_EXTRA_INSTALL_append = " bash \
         packagegroup-obmc-phosphor-apps-extras \
         packagegroup-obmc-phosphor-apps-extrasdev \
         i2c-tools \
-        screen \
         host-ipmid-fru \
         obmc-console \
         ${OBMC_IMAGE_EXTRA_INSTALL} \
