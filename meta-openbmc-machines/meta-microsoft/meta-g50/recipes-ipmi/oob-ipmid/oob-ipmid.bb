@@ -11,7 +11,7 @@ BB_NO_NETWORK = "0"
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
 SRC_URI = "git://csibmc@csibmc.visualstudio.com:22/G50/_git/oob-ipmid;protocol=ssh;"
-SRCREV = "1ca3d60114b1ff31fe371f62c52748c104447a1d"
+SRCREV = "1aee1b42ebefd92607811bb61716a8378629168a"
 
 S = "${WORKDIR}/git"
 
