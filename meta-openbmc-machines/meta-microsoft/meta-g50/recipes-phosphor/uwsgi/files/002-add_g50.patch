@@ -1,0 +1,35 @@
+diff --git a/buildconf/g50.ini b/buildconf/g50.ini
+new file mode 100644
+index 00000000..67822fd6
+--- /dev/null
++++ b/buildconf/g50.ini
+@@ -0,0 +1,29 @@
++[uwsgi]
++ssl = true
++xml = false
++yaml = false
++json = false
++pcre = false
++routing = false
++debug = false
++unbit = false
++malloc_implementation = libc
++extras =
++plugins =
++bin_name = uwsgi
++append_version =
++plugin_dir = .
++embedded_plugins = python, http, corerouter
++as_shared_library = false
++
++locking = auto
++event = auto
++timer = auto
++filemonitor = auto
++
++blacklist =
++whitelist =
++
++embed_files =
++
++embed_config =

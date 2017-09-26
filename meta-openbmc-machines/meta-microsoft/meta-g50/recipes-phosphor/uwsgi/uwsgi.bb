@@ -7,6 +7,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=33ab1ce13e2312dddfad07f97f66321f"
 SRCNAME = "uwsgi"
 SRC_URI = "git://github.com/unbit/uwsgi.git;protocol=https;branch=uwsgi-2.0 \
     file://001-fix_rpath.patch \
+    file://002-add_g50.patch \
 "
 
 SRCREV="d461b0c7087f181a28d25e8b06320ab5ec637f78"
@@ -19,6 +20,8 @@ inherit setuptools pkgconfig
 export UWSGI_REMOVE_INCLUDES = "/usr/include,/usr/local/include"
 
 export UWSGI_INCLUDES = "${STAGING_INCDIR_NATIVE}"
+
+export UWSGI_PROFILE = "g50"
 
 DEPENDS += " \
     openssl \
