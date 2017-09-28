@@ -98,7 +98,6 @@ def _main():
         Process(7, 'bmchealth_handler', '/run/bmchealth_handler.pid'),
         Process(8, 'obmc-ast-watchdog', '/run/obmc-ast-watchdog.pid'),
         Process(9, 'cable_led', '/run/cable_led.pid'),
-        Process(10, 'button_id', '/run/button_id.pid'),
         Process(11, 'power_control_sthelens', '/run/power_control_sthelens.pid'),
         Process(12, 'chassis_control', '/run/chassis_control.pid'),
         Process(13, 'pex_core', '/run/pex_core.pid'),
