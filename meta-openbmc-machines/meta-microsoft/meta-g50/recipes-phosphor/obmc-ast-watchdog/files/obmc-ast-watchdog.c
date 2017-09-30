@@ -16,7 +16,6 @@
 #define WATCHDOG_MODULE     "/dev/watchdog"
 
 #define WATCH_MISS_THRESHOLD  (10)
-#define MAX_RETRY_SYSTEM_STABLE (30)
 #define MAX_LEN_FILE_NAME (50)
 
 enum em_watch_type{
@@ -72,7 +71,6 @@ static int check_watch_file_status()
 //@return: 1-success for system stable; 0-it is abnormal for system stable
 static int wait_system_stable()
 {
-    int rety = 0;
     int i;
 
     //create all watch file
@@ -80,7 +78,7 @@ static int wait_system_stable()
         create_new_watch_file(g_watch_tab[i].file_path);
 
     //wait and check all task is alive to delete relative watch file
-    for (rety = 0; rety<MAX_RETRY_SYSTEM_STABLE; rety++)
+    while (1)
     {
         for (i = 0; i<EM_WATCH_COUNT; i++)
             if( access( g_watch_tab[i].file_path, F_OK ) != -1 )
