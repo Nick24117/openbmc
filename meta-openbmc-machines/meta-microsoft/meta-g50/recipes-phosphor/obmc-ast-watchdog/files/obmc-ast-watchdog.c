@@ -103,6 +103,12 @@ static void save_pid (void) {
     fclose(pidfile);
 }
 
+void WDT2_disable()
+{
+    system("devmem 0x1e78502c 32 0");
+    return;
+}
+
 void main()
 {
     struct stat st = {0};
@@ -127,6 +133,9 @@ void main()
         printf("open '%s' error!\n", WATCHDOG_MODULE);
         return;
     }
+
+    //After wait system stable and enabled watchdog1, watchdog2 can be disabled
+    WDT2_disable();
 
     printf("\nStart Watchdog ... \n");  
     while(1)
