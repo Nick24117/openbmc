@@ -1,0 +1,15 @@
+#**************************************************************
+#*                                                            *
+#*   Copyright (C) Microsoft Corporation. All rights reserved.*
+#*                                                            *
+#**************************************************************
+
+[Unit]
+Description=OpenBMC Systemd Monitor
+
+[Service]
+ExecStart=/usr/sbin/obmc-ast-systemd-monitor.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

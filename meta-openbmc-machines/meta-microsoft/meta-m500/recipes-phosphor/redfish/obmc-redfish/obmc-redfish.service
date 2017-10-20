@@ -1,0 +1,17 @@
+[Unit]
+Description=Redfish
+
+[Service]
+Type=simple
+Nice=-20
+WorkingDirectory=/usr/lib/redfish
+Environment=WATCHDOG_FILE=/run/obmc/redfish_start
+ExecStartPre=/bin/mkdir -p /run/obmc
+ExecStartPre=/bin/echo 0 > /run/obmc/redfish_start
+# 10 + 1 threads, the one extra thread is used to send 429 TOO_MANY_REQUEST response
+ExecStart=/usr/bin/uwsgi --https :443,/usr/lib/cert.pem,/usr/lib/cert.pem --http-timeout 600 --wsgi-file run_redfish.py --callable app --processes 1 --threads 11 --pidfile /run/obmc-redfish.pid
+Restart=always
+KillSignal=SIGQUIT
+
+[Install]
+WantedBy=multi-user.target
