@@ -81,6 +81,30 @@ probe_fs_type() {
 	echo ${fst:=jffs2}
 }
 
+boot_source() {
+    reg=$(printf '%d' "$(devmem 0x1E785030)")
+    if [ "$((reg & 2))" = "2" ]
+    then
+        echo "2nd"
+    fi
+}
+
+update_target() {
+    for f in $2
+    do
+        if [ "${f#$1}" = "bmc" ]
+        then
+            echo "1st"
+            break
+        fi
+    done
+}
+
+reinit_ce0() {
+    devmem 0x1E785034 32 0x1
+    echo Y > /sys/module/aspeed_smc/parameters/do_reinit_ce0
+}
+
 rwfs=$(findmtd rwfs)
 
 rwdev=/dev/mtdblock${rwfs#mtd}
@@ -231,6 +255,11 @@ do
 		fi
 	done
 done
+
+if [ "$(boot_source)" = "2nd" ] && [ "$(update_target "$image" "$imglist")" = "1st" ]
+then
+    reinit_ce0
+fi
 
 if test -n "$doflash"
 then
