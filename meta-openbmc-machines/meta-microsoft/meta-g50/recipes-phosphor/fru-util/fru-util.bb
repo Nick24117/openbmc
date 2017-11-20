@@ -16,7 +16,7 @@ INHIBIT_PACKAGE_DEBUG_SPLIT = "1"
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
 SRC_URI = "git://github.com/foxconn-bmc-ks/fru-util"
-SRCREV = "4cba0cb80080b0af6918e7576bac1070dc72faf4"
+SRCREV = "ca7cdcc58d7d9aae5475bdaa224740fd21adcaca"
 S = "${WORKDIR}/git"
 
 do_compile() {
