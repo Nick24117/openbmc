@@ -15,6 +15,7 @@ BusName={BUSNAME}
 TimeoutStartSec=300
 EnvironmentFile={envfiledir}/obmc/mapper
 Environment="PYTHONUNBUFFERED=1"
+Nice=-5
 
 [Install]
 WantedBy={SYSTEMD_DEFAULT_TARGET}
