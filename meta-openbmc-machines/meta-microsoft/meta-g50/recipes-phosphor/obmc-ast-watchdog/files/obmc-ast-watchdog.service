@@ -8,6 +8,7 @@
 Description=OpenBMC Hardware Watchdog
 
 [Service]
+ExecStartPre=/bin/mkdir /run/obmc
 ExecStart=@SBINDIR@/obmc-ast-watchdog
 Restart=always
 
