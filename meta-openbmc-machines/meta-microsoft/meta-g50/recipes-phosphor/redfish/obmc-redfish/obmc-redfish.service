@@ -9,7 +9,7 @@ Environment=WATCHDOG_FILE=/run/obmc/redfish_start
 ExecStartPre=/bin/mkdir -p /run/obmc
 ExecStartPre=/bin/echo 0 > /run/obmc/redfish_start
 # 10 + 1 threads, the one extra thread is used to send 429 TOO_MANY_REQUEST response
-ExecStart=/usr/bin/uwsgi --https :443,/usr/lib/cert.pem,/usr/lib/cert.pem --http-timeout 600 --wsgi-file run_redfish.py --callable app --processes 1 --threads 11 --die-on-term --ignore-sigpipe --pidfile /run/obmc-redfish.pid
+ExecStart=/usr/bin/uwsgi --https :443,/usr/lib/cert.pem,/usr/lib/cert.pem --http-timeout 600 --wsgi-file run_redfish.py --callable app --processes 1 --threads 11 --pidfile /run/obmc-redfish.pid
 Restart=always
 KillSignal=SIGQUIT
 
