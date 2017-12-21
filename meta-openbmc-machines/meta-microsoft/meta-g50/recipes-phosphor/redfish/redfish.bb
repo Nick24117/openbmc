@@ -16,7 +16,7 @@ BB_NO_NETWORK = "0"
 RDEPENDS_${PN} = "bash python python-mime python-pprint python-re"
 
 SRC_URI = "git://csibmc@csibmc.visualstudio.com:22/G50/_git/redfish;protocol=ssh;"
-SRCREV="67ea1e11c027530950f4ce58bc56909ba51b289c"
+SRCREV="8324538ca2072123e76a255247ff9dec477523de"
 
 
 FILESEXTRAPATHS_append := "${THISDIR}/redfish:"
