@@ -169,6 +169,7 @@ static void disable_WDT1(int wdt1) {
 
 int main(int argc, char** argv) {
     int wdt1 = -1;
+    struct timeval tv;
 
     /* Save PID to pre-defined PID file so that BMC Health sensor can count how
      * many times has this program restarted. */
@@ -192,7 +193,9 @@ int main(int argc, char** argv) {
         if (all_services_alive()) {
             kick_WDT1(wdt1);
         }
-        sleep(5);
+        tv.tv_sec = 5;
+        tv.tv_usec = 0;
+        select(0, NULL, NULL, NULL, &tv);
     }
 
     // should never reach here
