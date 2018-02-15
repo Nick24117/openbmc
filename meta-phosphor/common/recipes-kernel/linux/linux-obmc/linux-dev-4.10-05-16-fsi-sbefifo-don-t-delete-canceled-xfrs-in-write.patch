@@ -1,0 +1,48 @@
+From patchwork Thu Feb 15 12:35:55 2018
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: [linux, dev-4.10,
+ 05/16] fsi: sbefifo: don't delete canceled xfrs in write
+X-Patchwork-Submitter: Andrew Jeffery <andrew@aj.id.au>
+X-Patchwork-Id: 873781
+Message-Id: <20180215123606.25777-6-andrew@aj.id.au>
+To: joel@jms.id.au, jk@ozlabs.org, eajames@linux.vnet.ibm.com,
+ bradleyb@fuzziesquirrel.com, cbostic@linux.vnet.ibm.com
+Cc: openbmc@lists.ozlabs.org
+Date: Thu, 15 Feb 2018 23:05:55 +1030
+From: Andrew Jeffery <andrew@aj.id.au>
+List-Id: Development list for OpenBMC <openbmc.lists.ozlabs.org>
+
+From: Eddie James <eajames@linux.vnet.ibm.com>
+
+The write function was deleting canceled transfers before they had a
+change to run and complete. This results in not acking the EOT and not
+reading the rest of the data left in the FIFO for the canceled transfer.
+This is the cause of the EBADMSG errors found in the OCC driver, as the
+next op reads the data left over.
+
+Fix it by just checking the first entry of the list instead of
+iterating and canceling.
+
+Signed-off-by: Eddie James <eajames@linux.vnet.ibm.com>
+---
+ drivers/fsi/fsi-sbefifo.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/fsi/fsi-sbefifo.c b/drivers/fsi/fsi-sbefifo.c
+index e15cd10bad8c..5829e6aba9d3 100644
+--- a/drivers/fsi/fsi-sbefifo.c
++++ b/drivers/fsi/fsi-sbefifo.c
+@@ -709,7 +709,10 @@ static ssize_t sbefifo_write_common(struct sbefifo_client *client,
+ 	n = sbefifo_buf_nbwriteable(&client->wbuf);
+ 
+ 	spin_lock_irq(&sbefifo->lock);
+-	xfr = sbefifo_next_xfr(sbefifo);	/* next xfr to be executed */
++ 
++	/* next xfr to be executed */
++	xfr = list_first_entry_or_null(&sbefifo->xfrs, struct sbefifo_xfr,
++				       xfrs);
+ 
+ 	if ((client->f_flags & O_NONBLOCK) && xfr && n < len) {
+ 		spin_unlock_irq(&sbefifo->lock);

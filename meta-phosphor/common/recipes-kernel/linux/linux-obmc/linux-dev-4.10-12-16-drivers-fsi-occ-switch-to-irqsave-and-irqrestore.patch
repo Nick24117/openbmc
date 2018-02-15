@@ -1,0 +1,224 @@
+From patchwork Thu Feb 15 12:36:02 2018
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: [linux, dev-4.10,
+ 12/16] drivers: fsi: occ: switch to irqsave and irqrestore
+X-Patchwork-Submitter: Andrew Jeffery <andrew@aj.id.au>
+X-Patchwork-Id: 873793
+Message-Id: <20180215123606.25777-13-andrew@aj.id.au>
+To: joel@jms.id.au, jk@ozlabs.org, eajames@linux.vnet.ibm.com,
+ bradleyb@fuzziesquirrel.com, cbostic@linux.vnet.ibm.com
+Cc: openbmc@lists.ozlabs.org
+Date: Thu, 15 Feb 2018 23:06:02 +1030
+From: Andrew Jeffery <andrew@aj.id.au>
+List-Id: Development list for OpenBMC <openbmc.lists.ozlabs.org>
+
+From: Eddie James <eajames@linux.vnet.ibm.com>
+
+Fix spinlocking by storing the interrupt state and restoring that state
+when unlocking, instead of blindly disabling and re-enabling all irqs.
+
+Signed-off-by: Eddie James <eajames@linux.vnet.ibm.com>
+---
+ drivers/fsi/occ.c | 44 +++++++++++++++++++++++++-------------------
+ 1 file changed, 25 insertions(+), 19 deletions(-)
+
+diff --git a/drivers/fsi/occ.c b/drivers/fsi/occ.c
+index 2313b6235ba3..3dacc1277680 100644
+--- a/drivers/fsi/occ.c
++++ b/drivers/fsi/occ.c
+@@ -121,18 +121,19 @@ static DEFINE_IDA(occ_ida);
+ static int occ_enqueue_xfr(struct occ_xfr *xfr)
+ {
+ 	int empty;
++	unsigned long flags;
+ 	struct occ_client *client = to_client(xfr);
+ 	struct occ *occ = client->occ;
+ 
+ 	if (occ->cancel)
+ 		return -ENODEV;
+ 
+-	spin_lock_irq(&occ->list_lock);
++	spin_lock_irqsave(&occ->list_lock, flags);
+ 
+ 	empty = list_empty(&occ->xfrs);
+ 	list_add_tail(&xfr->link, &occ->xfrs);
+ 
+-	spin_unlock_irq(&occ->list_lock);
++	spin_unlock_irqrestore(&occ->list_lock, flags);
+ 
+ 	trace_occ_enq_xfer(client, xfr);
+ 
+@@ -206,6 +207,7 @@ static ssize_t occ_read_common(struct occ_client *client, char __user *ubuf,
+ 	size_t bytes;
+ 	struct occ_xfr *xfr;
+ 	struct occ *occ;
++	unsigned long flags;
+ 
+ 	if (!client)
+ 		return -ENODEV;
+@@ -217,7 +219,7 @@ static ssize_t occ_read_common(struct occ_client *client, char __user *ubuf,
+ 	xfr = &client->xfr;
+ 	occ = client->occ;
+ 
+-	spin_lock_irq(&client->lock);
++	spin_lock_irqsave(&client->lock, flags);
+ 
+ 	if (!test_bit(CLIENT_XFR_PENDING, &client->flags)) {
+ 		/* we just finished reading all data, return 0 */
+@@ -237,12 +239,12 @@ static ssize_t occ_read_common(struct occ_client *client, char __user *ubuf,
+ 			goto done;
+ 		}
+ 
+-		spin_unlock_irq(&client->lock);
++		spin_unlock_irqrestore(&client->lock, flags);
+ 
+ 		rc = wait_event_interruptible(client->wait,
+ 					      occ_read_ready(xfr, occ));
+ 
+-		spin_lock_irq(&client->lock);
++		spin_lock_irqsave(&client->lock, flags);
+ 
+ 		if (!test_bit(XFR_COMPLETE, &xfr->flags)) {
+ 			if (occ->cancel || test_bit(XFR_CANCELED, &xfr->flags))
+@@ -279,7 +281,7 @@ static ssize_t occ_read_common(struct occ_client *client, char __user *ubuf,
+ 	rc = bytes;
+ 
+ done:
+-	spin_unlock_irq(&client->lock);
++	spin_unlock_irqrestore(&client->lock, flags);
+ 	trace_occ_read_complete(client, xfr);
+ 	occ_put_client(client);
+ 	return rc;
+@@ -299,6 +301,7 @@ static ssize_t occ_write_common(struct occ_client *client,
+ {
+ 	int rc;
+ 	unsigned int i;
++	unsigned long flags;
+ 	u16 data_length, checksum = 0;
+ 	struct occ_xfr *xfr;
+ 
+@@ -312,7 +315,7 @@ static ssize_t occ_write_common(struct occ_client *client,
+ 	xfr = &client->xfr;
+ 
+ 	trace_occ_write_begin(client, xfr);
+-	spin_lock_irq(&client->lock);
++	spin_lock_irqsave(&client->lock, flags);
+ 
+ 	if (test_bit(CLIENT_XFR_PENDING, &client->flags)) {
+ 		rc = -EBUSY;
+@@ -360,7 +363,7 @@ static ssize_t occ_write_common(struct occ_client *client,
+ 	rc = len;
+ 
+ done:
+-	spin_unlock_irq(&client->lock);
++	spin_unlock_irqrestore(&client->lock, flags);
+ 	occ_put_client(client);
+ 	return rc;
+ }
+@@ -377,6 +380,7 @@ static int occ_release_common(struct occ_client *client)
+ {
+ 	struct occ *occ;
+ 	struct occ_xfr *xfr;
++	unsigned long flags;
+ 
+ 	if (!client)
+ 		return -ENODEV;
+@@ -384,13 +388,13 @@ static int occ_release_common(struct occ_client *client)
+ 	xfr = &client->xfr;
+ 	occ = client->occ;
+ 
+-	spin_lock_irq(&client->lock);
++	spin_lock_irqsave(&client->lock, flags);
+ 
+ 	set_bit(XFR_CANCELED, &xfr->flags);
+ 	if (!test_bit(CLIENT_XFR_PENDING, &client->flags))
+ 		goto done;
+ 
+-	spin_lock_irq(&occ->list_lock);
++	spin_lock(&occ->list_lock);
+ 
+ 	if (!test_bit(XFR_IN_PROGRESS, &xfr->flags)) {
+ 		/* already deleted from list if complete */
+@@ -398,12 +402,12 @@ static int occ_release_common(struct occ_client *client)
+ 			list_del(&xfr->link);
+ 	}
+ 
+-	spin_unlock_irq(&occ->list_lock);
++	spin_unlock(&occ->list_lock);
+ 
+ 	wake_up_all(&client->wait);
+ 
+ done:
+-	spin_unlock_irq(&client->lock);
++	spin_unlock_irqrestore(&client->lock, flags);
+ 
+ 	occ_put_client(client);
+ 	return 0;
+@@ -613,6 +617,7 @@ static void occ_worker(struct work_struct *work)
+ {
+ 	int rc = 0, empty;
+ 	u16 resp_data_length;
++	unsigned long flags;
+ 	unsigned long start;
+ 	const unsigned long timeout = msecs_to_jiffies(OCC_TIMEOUT_MS);
+ 	const long int wait_time = msecs_to_jiffies(OCC_CMD_IN_PRG_WAIT_MS);
+@@ -626,11 +631,11 @@ static void occ_worker(struct work_struct *work)
+ 	if (occ->cancel)
+ 		return;
+ 
+-	spin_lock_irq(&occ->list_lock);
++	spin_lock_irqsave(&occ->list_lock, flags);
+ 
+ 	xfr = list_first_entry_or_null(&occ->xfrs, struct occ_xfr, link);
+ 	if (!xfr) {
+-		spin_unlock_irq(&occ->list_lock);
++		spin_unlock_irqrestore(&occ->list_lock, flags);
+ 		return;
+ 	}
+ 
+@@ -639,7 +644,7 @@ static void occ_worker(struct work_struct *work)
+ 	resp = (struct occ_response *)xfr->buf;
+ 	set_bit(XFR_IN_PROGRESS, &xfr->flags);
+ 
+-	spin_unlock_irq(&occ->list_lock);
++	spin_unlock_irqrestore(&occ->list_lock, flags);
+ 	trace_occ_worker_xfer_begin(client, xfr);
+ 	mutex_lock(&occ->occ_lock);
+ 
+@@ -694,13 +699,13 @@ static void occ_worker(struct work_struct *work)
+ 	xfr->rc = rc;
+ 	set_bit(XFR_COMPLETE, &xfr->flags);
+ 
+-	spin_lock_irq(&occ->list_lock);
++	spin_lock_irqsave(&occ->list_lock, flags);
+ 
+ 	clear_bit(XFR_IN_PROGRESS, &xfr->flags);
+ 	list_del(&xfr->link);
+ 	empty = list_empty(&occ->xfrs);
+ 
+-	spin_unlock_irq(&occ->list_lock);
++	spin_unlock_irqrestore(&occ->list_lock, flags);
+ 
+ 	wake_up_interruptible(&client->wait);
+ 	trace_occ_worker_xfer_complete(client, xfr);
+@@ -819,15 +824,16 @@ static int occ_remove(struct platform_device *pdev)
+ 	struct occ *occ = platform_get_drvdata(pdev);
+ 	struct occ_xfr *xfr;
+ 	struct occ_client *client;
++	unsigned long flags;
+ 
+ 	occ->cancel = true;
+ 
+-	spin_lock_irq(&occ->list_lock);
++	spin_lock_irqsave(&occ->list_lock, flags);
+ 	list_for_each_entry(xfr, &occ->xfrs, link) {
+ 		client = to_client(xfr);
+ 		wake_up_all(&client->wait);
+ 	}
+-	spin_unlock_irq(&occ->list_lock);
++	spin_unlock_irqrestore(&occ->list_lock, flags);
+ 
+ 	misc_deregister(&occ->mdev);
+ 	device_for_each_child(&pdev->dev, NULL, occ_unregister_child);
