@@ -14,7 +14,7 @@ DEPENDS += "sdbus++-native"
 
 FOXCONN_BRANCH="foxconn-g2"
 SRC_URI += "git://github.com/foxconn-bmc-ks/phosphor-dbus-interfaces;branch=${FOXCONN_BRANCH}"
-SRCREV = "01fc62cef0b799815f330babfcf0de800dab9f3a"
+SRCREV = "fa7e5993d12543fb4ccd433fc6e38b018607e320"
 
 DEPENDS_remove_class-native = "sdbus++-native"
 DEPENDS_remove_class-nativesdk = "sdbus++-native"

@@ -96,7 +96,8 @@ do_install_append() {
     install -d ${D}/usr/local
 }
 
-SRC_URI += "git://github.com/openbmc/phosphor-bmc-code-mgmt"
-SRCREV = "7a248bc7c30ed1fdb7d6b4255eea2430852333d1"
+FOXCONN_BRANCH="foxconn-g2"
+SRC_URI += "git://github.com/foxconn-bmc-ks/phosphor-bmc-code-mgmt;branch=${FOXCONN_BRANCH}"
+SRCREV = "6a6277517d3be761c0d1f88dcafa6fb0a0ca4d9d"
 
 S = "${WORKDIR}/git"
