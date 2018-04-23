@@ -3,7 +3,7 @@ DESCRIPTION = "OpenBMC i2craw command tool."
 PR = "r1"
 
 inherit skeleton-sdbus
-#inherit obmc-phosphor-dbus-service
+inherit pkgconfig
 
 SKELETON_DIR = "info"
 

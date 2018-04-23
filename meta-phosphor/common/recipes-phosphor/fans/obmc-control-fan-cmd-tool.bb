@@ -3,7 +3,7 @@ DESCRIPTION = "OpenBMC fan command tool."
 PR = "r1"
 
 inherit skeleton-sdbus
-#inherit obmc-phosphor-dbus-service
+inherit pkgconfig
 
 SKELETON_DIR = "fan_tool"
 
