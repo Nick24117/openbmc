@@ -1,5 +1,5 @@
 SUMMARY = "Phosphor Systemd targets"
-DESCRIPTION = "Provides well known Systemd syncronization points for OpenBMC."
+DESCRIPTION = "Provides well known Systemd synchronization points for OpenBMC."
 HOMEPAGE = "http://github.com/openbmc"
 PR = "r1"
 
@@ -18,9 +18,10 @@ CHASSIS_SYNCH_TARGETS = "start-pre start on stop-pre stop off reset-on"
 # Chassis action power targets
 # - on:  Services to run to power on the chassis
 # - off: Services to run to power off the chassis
+# - powered-off: Services to run once chassis power is off
 # - reset: Services to check chassis power state and update chassis "on" target
 # - hard-off: Services to force an immediate power off of the chassis
-CHASSIS_ACTION_TARGETS = "poweron poweroff powerreset hard-poweroff"
+CHASSIS_ACTION_TARGETS = "poweron poweroff powered-off powerreset hard-poweroff"
 
 # Track all host synchronization point targets
 # - start-pre:                 Services to run before we start host boot
@@ -31,7 +32,12 @@ CHASSIS_ACTION_TARGETS = "poweron poweroff powerreset hard-poweroff"
 HOST_SYNCH_TARGETS = "start-pre starting started stop-pre stopping stopped reset-running"
 
 # Track all host action targets
-# - start:    Service to run to start the host
+# - start:    Will run startmin target, this target used for any additional
+#             services that user needs for an initial power on of host.
+#             For example, resetting the host reboot count could be put in
+#             this target so on any fresh power on, this count is reset.
+# - startmin: Minimum services required to start the host. This target will
+#             be called by reboot and start target.
 # - stop:     Services to run to shutdown the host
 # - quiesce:  Target to enter on host boot failure
 # - shutdown: Tell host to shutdown, then stop system
@@ -41,7 +47,7 @@ HOST_SYNCH_TARGETS = "start-pre starting started stop-pre stopping stopped reset
 #            multiple services and one of them is the quiesce target.
 # - timeout: Target to run when host watchdog times out
 # - reboot:  Reboot the host
-HOST_ACTION_TARGETS = "start stop quiesce reset shutdown crash timeout reboot"
+HOST_ACTION_TARGETS = "start startmin stop quiesce reset shutdown crash timeout reboot"
 
 CHASSIS_SYNCH_FMT = "obmc-power-{0}@.target"
 CHASSIS_ACTION_FMT = "obmc-chassis-{0}@.target"

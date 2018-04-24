@@ -7,29 +7,26 @@ Ishiguro. The Quagga tree aims to build a more involved community \
 around Quagga than the current centralised model of GNU Zebra."
 HOMEPAGE = "http://www.nongnu.org/quagga/"
 SECTION = "net"
-LICENSE = "GPL-2.0 & LGPL-2.0"
-DEPENDS = "readline ncurses perl-native"
-DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'snmp', 'net-snmp', '', d)}"
-SNMP_CONF="${@bb.utils.contains('DISTRO_FEATURES', 'snmp', '--enable-snmp', '', d)}"
 
+
+LICENSE = "GPL-2.0 & LGPL-2.0"
 LIC_FILES_CHKSUM = "file://COPYING;md5=81bcece21748c91ba9992349a91ec11d \
                     file://COPYING.LIB;md5=01ef24401ded36cd8e5d18bfe947240c"
+
+DEPENDS = "readline ncurses perl-native c-ares"
+DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'snmp', 'net-snmp', '', d)}"
+SNMP_CONF="${@bb.utils.contains('DISTRO_FEATURES', 'snmp', '--enable-snmp', '', d)}"
 
 # the "ip" command from busybox is not sufficient (flush by protocol flushes all routes)
 RDEPENDS_${PN} += "iproute2"
 
-QUAGGASUBDIR = ""
-# ${QUAGGASUBDIR} is deal with old versions. Set to "/attic" for old
-# versions and leave it empty for recent versions.
-SRC_URI = "${SAVANNAH_GNU_MIRROR}/quagga${QUAGGASUBDIR}/quagga-${PV}.tar.gz; \
+SRC_URI = "${SAVANNAH_GNU_MIRROR}/quagga/quagga-${PV}.tar.gz; \
            file://quagga.init \
            file://quagga.default \
            file://watchquagga.init \
            file://watchquagga.default \
            file://volatiles.03_quagga \
            file://quagga.pam \
-           file://ripd-fix-two-bugs-after-received-SIGHUP.patch \
-           file://quagga-Avoid-duplicate-connected-address.patch \
            file://bgpd.service \
            file://isisd.service \
            file://ospf6d.service \
@@ -37,13 +34,13 @@ SRC_URI = "${SAVANNAH_GNU_MIRROR}/quagga${QUAGGASUBDIR}/quagga-${PV}.tar.gz; \
            file://ripd.service \
            file://ripngd.service \
            file://zebra.service \
-"
+          "
 
-PACKAGECONFIG ??= "${@bb.utils.contains('DISTRO_FEATURES', 'pam', 'pam', '', d)}"
+PACKAGECONFIG ??= "${@bb.utils.filter('DISTRO_FEATURES', 'pam', d)}"
 PACKAGECONFIG[cap] = "--enable-capabilities,--disable-capabilities,libcap"
 PACKAGECONFIG[pam] = "--with-libpam, --without-libpam, libpam"
 
-inherit autotools update-rc.d useradd systemd
+inherit autotools update-rc.d useradd systemd pkgconfig
 
 SYSTEMD_PACKAGES = "${PN} ${PN}-bgpd ${PN}-isisd ${PN}-ospf6d ${PN}-ospfd ${PN}-ripd ${PN}-ripngd"
 SYSTEMD_SERVICE_${PN}-bgpd = "bgpd.service"
@@ -71,6 +68,8 @@ EXTRA_OECONF = "--sysconfdir=${sysconfdir}/quagga \
                 --enable-linux24-tcp-md5 \
                 ap_cv_cc_pie=no \
                 ${SNMP_CONF}"
+
+CACHED_CONFIGUREVARS += "ac_cv_path_PERL='/usr/bin/env perl'"
 
 do_install () {
     # Install init script and default settings
@@ -107,10 +106,6 @@ do_install () {
     sed -i 's!/etc/!${sysconfdir}/!g' ${D}${sysconfdir}/init.d/* ${D}${sysconfdir}/default/watchquagga
     sed -i 's!/var/!${localstatedir}/!g' ${D}${sysconfdir}/init.d/* ${D}${sysconfdir}/default/volatiles/volatiles.03_quagga
     sed -i 's!^PATH=.*!PATH=${base_sbindir}:${sbindir}:${base_bindir}:${bindir}!' ${D}${sysconfdir}/init.d/*
-
-    # Remove generated info dir file, it doesn't belong in the generated
-    # package.
-    rm -f ${D}${infodir}/dir
 
     # For PAM
     for feature in ${DISTRO_FEATURES}; do
@@ -188,9 +183,6 @@ CONFFILES_${PN}-watchquagga = "${sysconfdir}/default/watchquagga"
 DEBIAN_NOAUTONAME_${PN}-ospfd = "1"
 DEBIAN_NOAUTONAME_${PN}-ospfclient = "1"
 
-# the "ip" command from busybox is not sufficient (flush by protocol flushes all routes)
-RDEPENDS_${PN}          += "iproute2"
-
 # Main init script starts all deamons
 # Seperate init script for watchquagga
 INITSCRIPT_PACKAGES                     = "${PN} ${PN}-watchquagga"
@@ -202,7 +194,7 @@ INITSCRIPT_PARAMS_${PN}-watchquagga     = "defaults 90 10"
 # Add quagga's user and group
 USERADD_PACKAGES = "${PN}"
 GROUPADD_PARAM_${PN} = "--system quagga ; --system quaggavty"
-USERADD_PARAM_${PN} = "--system --home ${localstatedir}/run/quagga/ -M -g quagga --shell /bin/false quagga"
+USERADD_PARAM_${PN} = "--system --home ${localstatedir}/run/quagga/ -M -g quagga -G quaggavty --shell /bin/false quagga"
 
 pkg_postinst_${PN} () {
     if [ -z "$D" ] && [ -e /etc/init.d/populate-volatile.sh ] ; then

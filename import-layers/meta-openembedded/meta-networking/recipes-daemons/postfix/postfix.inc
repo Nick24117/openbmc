@@ -6,11 +6,11 @@ has a definite Sendmail-ish flavor, but the inside is completely different."
 
 HOMEPAGE= "http://www.postfix.org"
 SECTION = "mail"
-DEPENDS = "virtual/db libpcre openssl postfix-native \
+DEPENDS = "virtual/db icu libpcre openssl postfix-native \
     ${@bb.utils.contains('DISTRO_FEATURES', 'ldap', 'openldap', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'sasl', 'cyrus-sasl', '', d)} \
 "
-DEPENDS_class-native = "virtual/db-native openssl-native libpcre-native"
+DEPENDS_class-native = "virtual/db-native icu-native openssl-native libpcre-native"
 
 LICENSE = "IPL-1.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=64375f37431336ea1b1b3005fe3fa354"
@@ -60,20 +60,24 @@ export AUXLIBS-ldap = "\
 export CCARGS-ldap_class-native = ""
 export AUXLIBS-ldap_class-native = ""
 
+export CCARGS-nonis_libc-musl = "-DNO_NIS"
+export CCARGS-nonis = ""
+
 # SASL support -DUSE_LDAP_SASL -DUSE_SASL_AUTH
 # current openldap didn't enable SASL
 export CCARGS-sasl  = "\
-    ${@bb.utils.contains('DISTRO_FEATURES', 'sasl', '-DUSE_SASL_AUTH -DUSE_CYRUS_SASL -I=/usr/include/sasl', '', d)}"
+    ${@bb.utils.contains('DISTRO_FEATURES', 'sasl', '-DUSE_SASL_AUTH -DUSE_CYRUS_SASL -I${STAGING_INCDIR}/sasl', '', d)}"
 export AUXLIBS-sasl = "\
     ${@bb.utils.contains('DISTRO_FEATURES', 'sasl', '-lsasl2', '', d)}"
 export CCARGS-sasl_class-native = ""
 export AUXLIBS-sasl_class-native = ""
 
 # PCRE, TLS support default
-export CCARGS  = "${CFLAGS} -DHAS_PCRE -DUSE_TLS ${CCARGS-ldap} ${CCARGS-sasl}"
+export CCARGS  = "${CFLAGS} -DHAS_PCRE -DUSE_TLS -I${STAGING_INCDIR}/openssl ${CCARGS-ldap} ${CCARGS-sasl} ${CCARGS-nonis}"
 export AUXLIBS = "-lpcre -lssl -lcrypto ${AUXLIBS-sasl} ${AUXLIBS-ldap}"
 export POSTCONF = "${STAGING_DIR_NATIVE}${sbindir_native}/postconf"
 
+export CCARGS-nonis_libc-musl = "-DNO_NIS"
 # OPT,DEBUG is aready in CFLAGS
 # ignore the OPTS="CC=$CC" in Makefile it will not use the CC=$CC $CCARGS
 EXTRA_OEMAKE += "OPT= DEBUG= OPTS= "
@@ -164,8 +168,6 @@ do_install () {
     install -m 770 -d ${D}${localstatedir}/spool/postfix
     chown postfix:postfix ${D}${localstatedir}/spool/postfix
 
-    install -m 2755 -d ${D}${localstatedir}/spool/mail
-    chown postfix:nogroup ${D}${localstatedir}/spool/mail
     install -m 0755 -d ${D}${localstatedir}/lib/postfix
     chown postfix:nogroup ${D}${localstatedir}/lib/postfix
     install -m 0755 -d ${D}${localstatedir}/spool/postfix
@@ -214,7 +216,7 @@ do_install_append_class-native() {
 
 do_install_append_class-target() {
     # Remove references to buildmachine paths in target makedefs.out
-    sed -i -e 's:--sysroot=${STAGING_DIR_TARGET}::g' ${D}/etc/postfix/makedefs.out
+    sed -i 's:-fdebug-prefix-map[^ ]*::g; s:--sysroot=${STAGING_DIR_TARGET}::g' ${D}/etc/postfix/makedefs.out
 }
 
 NATIVE_INSTALL_WORKS = "1"

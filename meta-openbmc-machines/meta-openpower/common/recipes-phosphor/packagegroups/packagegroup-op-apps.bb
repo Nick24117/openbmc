@@ -3,6 +3,7 @@ PR = "r1"
 
 inherit packagegroup
 inherit obmc-phosphor-license
+inherit obmc-phosphor-utils
 
 PROVIDES = "${PACKAGES}"
 PACKAGES = " \
@@ -47,10 +48,12 @@ RDEPENDS_${PN}-fans = " \
 
 SUMMARY_${PN}-flash = "OpenPOWER Flash"
 RDEPENDS_${PN}-flash = " \
-        obmc-flash-bmc obmc-mgr-download obmc-control-bmc \
-        ${@mf_enabled(d, 'openpower-ubi-fs', \
-            'openpower-software-manager', \
-            'obmc-flash-bios obmc-mgr-download obmc-op-flasher')} \
+        obmc-flash-bios \
+        obmc-mgr-download \
+        obmc-op-flasher \
+        "
+RDEPENDS_${PN}-flash_df-openpower-ubi-fs = " \
+        openpower-software-manager \
         "
 
 SUMMARY_${PN}-system = "OpenPOWER System"

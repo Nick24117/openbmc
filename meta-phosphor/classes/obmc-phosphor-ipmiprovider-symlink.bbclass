@@ -1,5 +1,7 @@
 # Common code for recipes that create IPMI provider libraries
 
+inherit obmc-phosphor-utils
+
 LIBDIR = "${D}/${libdir}/ipmid-providers/"
 HOSTIPMI_LIBDIR = "${D}/${libdir}/host-ipmid/"
 NETIPMI_LIBDIR = "${D}/${libdir}/net-ipmid/"
@@ -20,11 +22,10 @@ python symlink_create_postinstall() {
 
         # get the library name
         path, file = os.path.split(filelist[0])
-        os.chdir(install_dir)
         source = "../ipmid-providers/" + file
 
         # create the symlink
-        os.symlink(source, file)
+        os.symlink(source, os.path.join(install_dir, file))
 
     for libname in listvar_to_list(d, 'HOSTIPMI_PROVIDER_LIBRARY'):
         install_dir = d.getVar('HOSTIPMI_LIBDIR', True)

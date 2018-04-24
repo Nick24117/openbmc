@@ -13,11 +13,9 @@ DEPENDS += "systemd"
 DEPENDS += "phosphor-ipmi-host"
 RDEPENDS_${PN} += "libmapper"
 RDEPENDS_${PN} += "libsystemd"
-PROVIDES += "virtual/obmc-net-ipmi"
-RPROVIDES_${PN} += "virtual-obmc-net-ipmi"
 
 SRC_URI += "git://github.com/openbmc/phosphor-net-ipmid"
-SRCREV = "541aee76cf4a6d182c864f62298579eb155f414b"
+SRCREV = "62ec622e0b71fb396ef681ad4cadc4a567ce5d85"
 
 S = "${WORKDIR}/git"
 

@@ -2,7 +2,6 @@ SUMMARY = "OpenBMC - Applications"
 PR = "r1"
 
 inherit packagegroup
-inherit obmc-phosphor-utils
 inherit obmc-phosphor-license
 
 PROVIDES = "${PACKAGES}"
@@ -11,10 +10,12 @@ PACKAGES = " \
         ${PN}-chassis-state-mgmt \
         ${PN}-extras \
         ${PN}-extrasdev \
+        ${PN}-extrasdevtools \
         ${PN}-fan-control \
         ${PN}-host-state-mgmt \
         ${PN}-inventory \
         ${PN}-leds \
+        ${PN}-logging \
         ${PN}-sensors \
         ${PN}-software \
         ${PN}-host-check-mgmt \
@@ -34,11 +35,6 @@ RDEPENDS_${PN}-chassis-state-mgmt = " \
         ${VIRTUAL-RUNTIME_obmc-chassis-state-manager} \
         "
 
-SUMMARY_${PN}-host-check-mgmt = "Host state check on bmc reset"
-RDEPENDS_${PN}-host-check-mgmt = " \
-        ${VIRTUAL-RUNTIME_obmc-host-check} \
-        "
-
 SUMMARY_${PN}-extras = "Extra features"
 RDEPENDS_${PN}-extras = " \
         phosphor-rest \
@@ -48,6 +44,10 @@ RDEPENDS_${PN}-extras = " \
 SUMMARY_${PN}-extrasdev = "Development features"
 RDEPENDS_${PN}-extrasdev = " \
         rest-dbus \
+        "
+
+SUMMARY_${PN}-extrasdevtools = "Development tools"
+RDEPENDS_${PN}-extrasdevtools = " \
         "
 
 # Use the fan control package group for applications
@@ -79,16 +79,34 @@ RDEPENDS_${PN}-leds = " \
         ${VIRTUAL-RUNTIME_obmc-led-monitor} \
         "
 
+SUMMARY_${PN}-logging = "Logging applications"
+RDEPENDS_${PN}-logging = " \
+        phosphor-logging \
+        "
+
 SUMMARY_${PN}-sensors = "Sensor applications"
 RDEPENDS_${PN}-sensors = " \
         ${VIRTUAL-RUNTIME_obmc-sensors-hwmon} \
+        "
+
+# These packages are not required with UBI enabled
+${PN}-software-extras = " \
+        obmc-flash-bmc \
+        obmc-mgr-download \
+        "
+
+${PN}-software-extras_df-obmc-ubi-fs = " \
+        phosphor-image-signing \
         "
 
 SUMMARY_${PN}-software = "Software applications"
 RDEPENDS_${PN}-software = " \
         ${VIRTUAL-RUNTIME_obmc-bmc-download-mgr} \
         ${VIRTUAL-RUNTIME_obmc-bmc-updater} \
+        ${VIRTUAL-RUNTIME_obmc-bmc-version} \
+        ${${PN}-software-extras} \
         "
+
 SUMMARY_${PN}-debug-collector = "BMC debug collector"
 RDEPENDS_${PN}-debug-collector = " \
         ${VIRTUAL-RUNTIME_obmc-dump-manager} \
@@ -99,7 +117,7 @@ RDEPENDS_${PN}-debug-collector = " \
 
 SUMMARY_${PN}-settings = "Settings applications"
 RDEPENDS_${PN}-settings = " \
-        ${VIRTUAL-RUNTIME_obmc-settings-mgr} \
+        ${VIRTUAL-RUNTIME_obmc-settings-mgmt} \
         "
 
 SUMMARY_${PN}-network = "BMC Network Manager"

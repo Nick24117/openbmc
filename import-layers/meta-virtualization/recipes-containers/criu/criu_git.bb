@@ -13,20 +13,20 @@ EXCLUDE_FROM_WORLD = "1"
 
 LIC_FILES_CHKSUM = "file://COPYING;md5=412de458544c1cb6a2b512cd399286e2"
 
-SRCREV = "c031417255f6a5c4409d15ff0b36af5f6e90c559"
-PR = "r0"
-PV = "2.5+git${SRCPV}"
+SRCREV = "a31c1854e10580a09621e539c3ec052b875a8e06"
+PV = "3.4+git${SRCPV}"
 
 SRC_URI = "git://github.com/xemul/criu.git;protocol=git \
            file://0001-criu-Fix-toolchain-hardcode.patch \
            file://0002-criu-Skip-documentation-install.patch \
            file://0001-criu-Change-libraries-install-directory.patch \
-           ${@bb.utils.contains('PACKAGECONFIG', 'selinux', '', 'file://disable-selinux.patch', d)} \
+           file://lib-Makefile-overwrite-install-lib-to-allow-multiarc.patch \
           "
 
 COMPATIBLE_HOST = "(x86_64|arm|aarch64).*-linux"
 
-DEPENDS += "libnl libcap protobuf-c-native protobuf-c"
+DEPENDS += "libnl libcap protobuf-c-native protobuf-c util-linux-native libbsd libnet"
+RDEPENDS_${PN} = "bash"
 
 S = "${WORKDIR}/git"
 
@@ -67,6 +67,7 @@ do_compile () {
 }
 
 do_install () {
+    export INSTALL_LIB="${libdir}/${PYTHON_DIR}/site-packages"
     oe_runmake PREFIX=${exec_prefix} LIBDIR=${libdir} DESTDIR="${D}" install
 }
 
@@ -74,4 +75,9 @@ FILES_${PN} += "${systemd_unitdir}/ \
             ${libdir}/python2.7/site-packages/ \
             ${libdir}/pycriu/ \
             ${libdir}/crit-0.0.1-py2.7.egg-info \
+            "
+
+FILES_${PN}-staticdev += " \
+            ${libexecdir}/compel/std.lib.a \
+            ${libexecdir}/compel/fds.lib.a \
             "

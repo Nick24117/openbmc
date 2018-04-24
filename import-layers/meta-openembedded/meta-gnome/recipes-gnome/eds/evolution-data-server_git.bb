@@ -8,30 +8,30 @@ LIC_FILES_CHKSUM = "file://COPYING;md5=6a6e689d19255cf0557f3fe7d7068212 \
                     file://libedataserver/e-data-server-util.h;endline=20;md5=934502f03c84523aa059d4825887b380 \
                     file://calendar/libecal/e-cal.h;endline=24;md5=5d496b9b6fd2a4fdbbfc31ef9455c9d0"
 
-DEPENDS = "intltool-native glib-2.0 gtk+3 gconf dbus db gnome-common virtual/libiconv zlib libsoup-2.4 libglade libical libgnome-keyring gperf-native libgdata nss"
+DEPENDS = "intltool-native glib-2.0 gtk+3 gconf dbus db virtual/libiconv zlib libsoup-2.4 libglade libical libgnome-keyring gperf-native libgdata nss"
 
 SRCREV = "a9e4e74ec4473a4fd09e56b690bd4fa72f686687"
 
 # 3.4 series needs libgdata-0.10*, 3.8 series needs also libsecret instead of gnome-keyring
 PV = "3.2.3+git${SRCPV}"
 
-SRC_URI = " \
-    git://git.gnome.org/evolution-data-server;branch=gnome-3-2 \
-    file://0001-contact-Replace-the-Novell-sample-contact-with-somet.patch \
-    file://0002-Fix-for-automake-1.12.x.patch \
-    file://0003-Disable-Werror-for-automake.patch \
-    file://0004-configure-Fix-libical-pkg-config-trying-to-use-host-.patch \
-    file://0005-soup-adapt-to-new-libxml2-API-from-2.9.0.patch \
-    file://0006-configure.ac-do-not-overwrite-localedir.patch \
-    file://iconv-detect.h \
-"
+SRC_URI = "git://git.gnome.org/evolution-data-server;branch=gnome-3-2 \
+           file://0001-contact-Replace-the-Novell-sample-contact-with-somet.patch \
+           file://0002-Fix-for-automake-1.12.x.patch \
+           file://0003-Disable-Werror-for-automake.patch \
+           file://0004-configure-Fix-libical-pkg-config-trying-to-use-host-.patch \
+           file://0005-soup-adapt-to-new-libxml2-API-from-2.9.0.patch \
+           file://0006-configure.ac-do-not-overwrite-localedir.patch \
+           file://iconv-detect.h \
+           file://0001-imapx-Fix-signature-for-imapx_tokenise_struct.patch \
+           "
 
 S = "${WORKDIR}/git"
 
 inherit autotools gtk-doc pkgconfig gettext gobject-introspection
 
 # -ldb needs this on some platforms
-LDFLAGS += "-lpthread"
+LDFLAGS += "-lpthread -lgmodule-2.0 -lgthread-2.0"
 
 # Parallel make shows many issues with this source code.
 # Current problems seem to be duplicate execution of the calander/backends
@@ -114,4 +114,3 @@ FILES_libedataserverui = "${libdir}/libedataserverui-*.so.* ${datadir}/evolution
 FILES_libedataserverui-dev = "${libdir}/libedataserverui-*.so \
                               ${libdir}/pkgconfig/libedataserverui-*.pc \
                               ${includedir}/evolution-data-server-*/libedataserverui/*.h"
-

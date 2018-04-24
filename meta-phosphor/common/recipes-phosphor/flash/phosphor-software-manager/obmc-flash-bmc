@@ -1,4 +1,32 @@
-#!/bin/sh
+#!/bin/bash
+set -eo pipefail
+
+# Check if BMC is currently booted from the alternate chip; returns "1" if true
+check_if_alt() {
+  res=0
+  wdiof_cardreset_bit=5
+  wdiof_cardreset=$((1 << $wdiof_cardreset_bit))
+
+  # Read the systemd watchdog config to see which device we should use
+  line=$(cat /etc/systemd/system.conf | grep "WatchdogDevice")
+  if [ ! -z ${line} ]; then
+    watchdog_device=${line##WatchdogDevice=/dev/}
+
+    # Check for legacy symlink to /dev/watchdog0
+    if [ ${watchdog_device} == "watchdog" ]; then
+      watchdog_device="watchdog0"
+    fi
+
+    # Check the bootstatus to see if we've been reset
+    path="/sys/class/watchdog/${watchdog_device}/bootstatus"
+    if [ -f ${path} ]; then
+      bootstatus=$(cat ${path})
+      res=$((($bootstatus & $wdiof_cardreset) >> $wdiof_cardreset_bit))
+    fi
+  fi
+
+  echo "${res}"
+}
 
 # Get the root mtd device number (mtdX) from "/dev/ubiblockX_Y on /"
 findrootmtd() {
@@ -26,6 +54,13 @@ findmtd() {
   m="$(grep -xl "$1" /sys/class/mtd/*/name)"
   m="${m%/name}"
   m="${m##*/}"
+  echo "${m}"
+}
+
+# Get the mtd device number only (return X of mtdX)
+findmtdnum() {
+  m="$(findmtd "$1")"
+  m="${m##mtd}"
   echo "${m}"
 }
 
@@ -100,10 +135,17 @@ ubi_rw() {
   rw="${rwmtd#mtd}"
   ubidev="/dev/ubi${rw}"
 
-  # Create a ubi volume of size 4MB, that is the current size of the rwfs image
+  # Update rwfs_size, check imgsize was specified, otherwise it'd clear the var
+  if [ ! -z "$imgsize" ]; then
+    rwsize="$(fw_printenv -n rwfs_size 2>/dev/null)" || true
+    if [[ "${imgsize}" != "${rwsize}" ]]; then
+      fw_setenv rwfs_size "${imgsize}"
+    fi
+  fi
+
   vol="$(findubi "${name}")"
   if [ -z "${vol}" ]; then
-    ubimkvol "${ubidev}" -N "${name}" -s 4MiB
+    ubimkvol "${ubidev}" -N "${name}" -s "${imgsize}"
   fi
 }
 
@@ -125,8 +167,15 @@ ubi_ro() {
 
   ubi_remove_volumes
 
-  # Create a static ubi volume
-  # TODO Get the actual image size openbmc/openbmc#1840
+  if [ -z "${imgfile}" ]; then
+    echo "Unable to create read-only volume. Image file not specified."
+    return 1
+  fi
+
+  # Create a ubi volume, dynamically sized to fit BMC image if size unspecified
+  img="/tmp/images/${version}/${imgfile}"
+  imgsize="$(stat -c '%s' ${img})"
+
   vol="$(findubi "${name}")"
   if [ ! -z "${vol}" ]; then
     # Allow a duplicate kernel volume on the alt mtd
@@ -147,10 +196,6 @@ ubi_block() {
   block="/dev/ubiblock${ubidevid}"
   if [ ! -e "$block" ]; then
     ubiblock --create "/dev/ubi${ubidevid}"
-    if [ $? != 0 ]; then
-      echo "Unable to create ubiblock ${name}:${ubidevid}"
-      return 1
-    fi
   fi
 }
 
@@ -159,10 +204,6 @@ ubi_updatevol() {
   ubidevid="${vol#ubi}"
   img="/tmp/images/${version}/${imgfile}"
   ubiupdatevol "/dev/ubi${ubidevid}" "${img}"
-  if [ $? != 0 ]; then
-    echo "Unable to update volume ${name}!"
-    return 1
-  fi
 }
 
 ubi_remove() {
@@ -215,8 +256,6 @@ remount_ubi() {
   IFS=',' read -r -a mtds <<< "$mtds"
   mtds=($(echo "${mtds[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
   for mtd in ${mtds[@]}; do
-    # Re-attach mtd device to ubi if not already done
-    ubiattach /dev/ubi_ctrl -m "${mtd}" -d "${mtd}" &> /dev/null
     # Get information on all ubi volumes
     ubinfo=$(ubinfo -d ${mtd})
     presentVolumes=${ubinfo##*:}
@@ -233,7 +272,11 @@ remount_ubi() {
 
         if [ ! -d ${mountdir} ]; then
           mkdir -p "${mountdir}"
-          ubiblock --create /dev/ubi${mtd}_${element} &> /dev/null
+          # U-Boot will create the ubiblock for the running version, but not
+          # for the version on the other chip
+          if [ ! -e "/dev/ubiblock${mtd}_${element}" ]; then
+            ubiblock --create /dev/ubi${mtd}_${element}
+          fi
           mount -t squashfs -o ro "/dev/ubiblock${mtd}_${element}" "${mountdir}"
         fi
       fi
@@ -248,13 +291,58 @@ copy_env_var_to_alt() {
   fw_setenv -c /etc/alt_fw_env.config "${varName}" "${value}"
 }
 
+# When the alternate bmc chip boots, u-boot thinks its the primary mtdX.
+# Therefore need to swap the chip numbers when copying the ubiblock and root to
+# alternate bmc u-boot environment.
+copy_ubiblock_to_alt() {
+  value="$(fw_printenv -n ubiblock)"
+  bmcNum="$(findmtdnum "bmc")"
+  altNum="$(findmtdnum "alt-bmc")"
+  replaceAlt="${value/${altNum},/${bmcNum},}"
+
+  if [[ "${value}" == "${replaceAlt}" ]]; then
+    replaceBmc="${value/${bmcNum},/${altNum},}"
+    value=${replaceBmc}
+  else
+    value=${replaceAlt}
+  fi
+
+  fw_setenv -c /etc/alt_fw_env.config ubiblock "${value}"
+}
+
+copy_root_to_alt() {
+  value="$(fw_printenv -n root)"
+  bmcNum="$(findmtdnum "bmc")"
+  altNum="$(findmtdnum "alt-bmc")"
+  replaceAlt="${value/${altNum}_/${bmcNum}_}"
+
+  if [[ "${value}" == "${replaceAlt}" ]]; then
+    replaceBmc="${value/${bmcNum}_/${altNum}_}"
+    value=${replaceBmc}
+  else
+    value=${replaceAlt}
+  fi
+
+  fw_setenv -c /etc/alt_fw_env.config root "${value}"
+}
+
 ubi_setenv() {
+    # The U-Boot environment maintains two banks of environment variables.
+    # The banks need to be consistent with each other to ensure that these
+    # variables can reliably be read from file. In order to guarantee that the
+    # banks are both correct, we need to run fw_setenv twice.
     variable=$1
     if [[ "$variable" == *"="* ]]; then
         varName="${variable%=*}"
         value="${variable##*=}"
-        fw_setenv "$varName" "$value"
+        # Write only if var is not set already to the requested value
+        currentValue="$(fw_printenv -n "${varName}" 2>/dev/null)" || true
+        if [[ "${currenValue}" != "${value}" ]]; then
+          fw_setenv "$varName" "$value"
+          fw_setenv "$varName" "$value"
+        fi
     else
+        fw_setenv "$variable"
         fw_setenv "$variable"
     fi
 }
@@ -267,8 +355,8 @@ mtd_write() {
 
 backup_env_vars() {
   copy_env_var_to_alt kernelname
-  copy_env_var_to_alt ubiblock
-  copy_env_var_to_alt root
+  copy_ubiblock_to_alt
+  copy_root_to_alt
 }
 
 update_env_vars() {
@@ -323,17 +411,47 @@ create_vol_in_alt() {
   fi
 }
 
-factory_reset() {
-    # A lock file for printenv exists on /var, which isn't mounted when this
-    # function is called. We have to read the rwreset variable out of file.
-    ubootmtd="$(findmtd "u-boot-env")"
-    grep -q -x "rwreset=true" /dev/$ubootmtd
-    if [ "$?" = "0" ]; then
-      ubi_remove "rwfs"
-      reqmtd="bmc"
-      name="rwfs"
-      ubi_rw
+# Copy contents of one MTD device to another
+mtd_copy() {
+  in=$1
+  out=$2
+
+  # Must erase MTD first to prevent corruption
+  flash_eraseall "${out}"
+  dd if="${in}" of="${out}"
+}
+
+mirroruboot() {
+  bmc="$(findmtd "u-boot")"
+  bmcdev="/dev/${bmc}"
+  alt="$(findmtd "alt-u-boot")"
+  altdev="/dev/${alt}"
+
+  checksum_bmc="$(md5sum "${bmcdev}")"
+  checksum_bmc="${checksum_bmc% *}"
+  checksum_alt="$(md5sum "${altdev}")"
+  checksum_alt="${checksum_alt% *}"
+
+  if [[ "${checksum_bmc}" != "${checksum_alt}" ]]; then
+    bmcenv="$(findmtd "u-boot-env")"
+    bmcenvdev="/dev/${bmcenv}"
+    altenv="$(findmtd "alt-u-boot-env")"
+    altenvdev="/dev/${altenv}"
+    is_alt="$(check_if_alt)"
+
+    if [[ "${is_alt}" == "1" ]]; then
+      echo "Mirroring U-boot; alt to bmc"
+      mtd_copy "${altdev}" "${bmcdev}"
+      mtd_copy "${altenvdev}" "${bmcenvdev}"
+    else
+      echo "Mirroring U-boot; bmc to alt"
+      mtd_copy "${bmcdev}" "${altdev}"
+      mtd_copy "${bmcenvdev}" "${altenvdev}"
     fi
+
+    copy_ubiblock_to_alt
+    copy_root_to_alt
+  fi
 }
 
 case "$1" in
@@ -346,6 +464,7 @@ case "$1" in
   ubirw)
     reqmtd="$2"
     name="$3"
+    imgsize="$4"
     ubi_rw
     ;;
   ubiro)
@@ -354,7 +473,6 @@ case "$1" in
     name="$3"
     version="$4"
     imgfile="image-rofs"
-    imgsize="16MiB"
     ubi_ro
     ubi_updatevol
     ubi_block
@@ -365,7 +483,6 @@ case "$1" in
     name="$3"
     version="$4"
     imgfile="image-kernel"
-    imgsize="4MiB"
     ubi_ro
     ubi_updatevol
     create_vol_in_alt
@@ -396,16 +513,11 @@ case "$1" in
   rebootguarddisable)
     rebootguarddisable
     ;;
-  reset)
-    factory_reset
+  mirroruboot)
+    mirroruboot
     ;;
   *)
     echo "Invalid argument"
     exit 1
     ;;
 esac
-rc=$?
-if [ ${rc} -ne 0 ]; then
-  echo "$0: error ${rc}"
-  exit ${rc}
-fi

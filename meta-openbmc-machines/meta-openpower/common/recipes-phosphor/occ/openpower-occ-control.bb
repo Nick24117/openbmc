@@ -50,10 +50,10 @@ EXTRA_OECONF_append = "${@bb.utils.contains('OBMC_MACHINE_FEATURES', 'i2c-occ', 
 
 OCC_ENABLE = "enable"
 OCC_DISABLE = "disable"
-HOST_START = "start"
+HOST_START = "startmin"
 HOST_STOP = "stop"
 
-# Ensure host-stop and host-start targets require needed occ states
+# Ensure host-stop and host-startmin targets require needed occ states
 OCC_TMPL = "op-occ-{0}@.service"
 HOST_TGTFMT = "obmc-host-{1}@{2}.target"
 OCC_INSTFMT = "op-occ-{0}@{2}.service"
@@ -63,11 +63,14 @@ SYSTEMD_LINK_${PN} += "${@compose_list_zip(d, 'HOST_OCC_FMT', 'OCC_DISABLE', 'HO
 
 # Set the occ disable service to be executed on host error
 HOST_ERROR_TARGETS = "crash timeout"
+
 OCC_DISABLE_TMPL = "op-occ-disable@.service"
 HOST_ERROR_TGTFMT = "obmc-host-{0}@{1}.target"
 OCC_DISABLE_INSTFMT = "op-occ-disable@{1}.service"
 HOST_ERROR_FMT = "../${OCC_DISABLE_TMPL}:${HOST_ERROR_TGTFMT}.wants/${OCC_DISABLE_INSTFMT}"
+
 SYSTEMD_LINK_${PN} += "${@compose_list(d, 'HOST_ERROR_FMT', 'HOST_ERROR_TARGETS', 'OBMC_HOST_INSTANCES')}"
+
 S = "${WORKDIR}/git"
 
 # Remove packages not required for native build

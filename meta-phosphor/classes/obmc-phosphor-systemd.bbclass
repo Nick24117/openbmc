@@ -80,7 +80,7 @@ def SystemdUnit(unit):
                 base = self.unit.replace('dbus-', '')
                 base = base.replace('.%s' % cls, '')
                 if self.is_instance:
-                    base = base.rstrip('@%s' % self.instance)
+                    base = base.replace('@%s' % self.instance, '')
                 if self.is_template:
                     base = base.rstrip('@')
                 return base
@@ -197,6 +197,11 @@ python() {
         add_default_subs(d, '%s' % dest)
         add_sd_user(d, '%s' % dest, pkg)
 
+
+    if d.getVar('CLASSOVERRIDE', True) != 'class-target':
+        return
+
+    d.appendVarFlag('do_install', 'postfuncs', ' systemd_do_postinst')
 
     pn = d.getVar('PN', True)
     if d.getVar('SYSTEMD_SERVICE_%s' % pn, True) is None:
@@ -326,6 +331,3 @@ do_install_append() {
                         ${D}${systemd_system_unitdir}/$s
         done
 }
-
-
-do_install[postfuncs] += "systemd_do_postinst"

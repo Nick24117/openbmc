@@ -4,6 +4,7 @@ PR = "r1"
 
 inherit skeleton-gdbus
 inherit obmc-phosphor-dbus-service
+inherit pkgconfig
 
 DEPENDS += "phosphor-mapper systemd"
 
@@ -19,6 +20,7 @@ SYSTEMD_SERVICE_${PN} += " \
         op-wait-power-off@.service \
         op-reset-chassis-running@.service \
         op-reset-chassis-on@.service \
+        op-powered-off@.service \
         "
 
 SYSTEMD_ENVIRONMENT_FILE_${PN} += "obmc/power_control"
@@ -32,6 +34,10 @@ STOP_TMPL = "op-power-stop@.service"
 STOP_TGTFMT = "obmc-chassis-poweroff@{1}.target"
 STOP_INSTFMT = "op-power-stop@{0}.service"
 STOP_FMT = "../${STOP_TMPL}:${STOP_TGTFMT}.requires/${STOP_INSTFMT}"
+
+POWERED_OFF_TMPL = "op-powered-off@.service"
+POWERED_OFF_INSTFMT = "op-powered-off@{0}.service"
+POWERED_OFF_FMT = "../${POWERED_OFF_TMPL}:${STOP_TGTFMT}.requires/${POWERED_OFF_INSTFMT}"
 
 ON_TMPL = "op-wait-power-on@.service"
 ON_INSTFMT = "op-wait-power-on@{0}.service"
@@ -54,6 +60,7 @@ RESET_ON_CHASSIS_FMT = "../${RESET_ON_CHASSIS_TMPL}:${RESET_TGTFMT}.requires/${R
 # Build up requires relationship for START_TGTFMT and STOP_TGTFMT
 SYSTEMD_LINK_${PN} += "${@compose_list_zip(d, 'START_FMT', 'OBMC_POWER_INSTANCES', 'OBMC_CHASSIS_INSTANCES')}"
 SYSTEMD_LINK_${PN} += "${@compose_list_zip(d, 'STOP_FMT', 'OBMC_POWER_INSTANCES', 'OBMC_CHASSIS_INSTANCES')}"
+SYSTEMD_LINK_${PN} += "${@compose_list_zip(d, 'POWERED_OFF_FMT', 'OBMC_POWER_INSTANCES', 'OBMC_CHASSIS_INSTANCES')}"
 SYSTEMD_LINK_${PN} += "${@compose_list_zip(d, 'ON_FMT', 'OBMC_POWER_INSTANCES', 'OBMC_CHASSIS_INSTANCES')}"
 SYSTEMD_LINK_${PN} += "${@compose_list_zip(d, 'OFF_FMT', 'OBMC_POWER_INSTANCES', 'OBMC_CHASSIS_INSTANCES')}"
 SYSTEMD_LINK_${PN} += "${@compose_list_zip(d, 'RESET_ON_FMT', 'OBMC_POWER_INSTANCES', 'OBMC_CHASSIS_INSTANCES')}"
@@ -61,7 +68,7 @@ SYSTEMD_LINK_${PN} += "${@compose_list_zip(d, 'RESET_ON_CHASSIS_FMT', 'OBMC_POWE
 
 # Now show that the main control target requires these power targets
 START_TMPL_CTRL = "obmc-chassis-poweron@.target"
-START_TGTFMT_CTRL = "obmc-host-start@{1}.target"
+START_TGTFMT_CTRL = "obmc-host-startmin@{1}.target"
 START_INSTFMT_CTRL = "obmc-chassis-poweron@{0}.target"
 START_FMT_CTRL = "../${START_TMPL_CTRL}:${START_TGTFMT_CTRL}.requires/${START_INSTFMT_CTRL}"
 SYSTEMD_LINK_${PN} += "${@compose_list_zip(d, 'START_FMT_CTRL', 'OBMC_POWER_INSTANCES', 'OBMC_CHASSIS_INSTANCES')}"

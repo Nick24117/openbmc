@@ -7,6 +7,8 @@ inherit obmc-phosphor-dbus-service
 
 RRECOMMENDS_${PN} += "virtual-obmc-inventory-data"
 
+VIRTUAL-RUNTIME_skeleton_workbook ?= ""
+
 RDEPENDS_${PN} += "\
         python-argparse \
         python-dbus \
@@ -19,5 +21,4 @@ RDEPENDS_${PN} += "\
         "
 
 SKELETON_DIR = "pyinventorymgr"
-DBUS_SERVICE_${PN} += "org.openbmc.Inventory.service"
 SYSTEMD_SERVICE_${PN} += "obmc-sync-inventory-item@.service"

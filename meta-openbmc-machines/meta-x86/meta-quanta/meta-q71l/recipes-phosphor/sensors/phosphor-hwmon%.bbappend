@@ -1,3 +1,5 @@
+inherit obmc-phosphor-utils
+
 FILESEXTRAPATHS_prepend_quanta-q71l := "${THISDIR}/${PN}:"
 
 # More conf files can be added as sensors are added.
@@ -12,4 +14,4 @@ ITEMS += "iio-hwmon.conf"
 ENVS = "obmc/hwmon/{0}"
 SYSTEMD_ENVIRONMENT_FILE_${PN}_append_quanta-q71l := " ${@compose_list(d, 'ENVS', 'ITEMS')}"
 
-EXTRA_OECONF_append_quanta-q71l = " --enable-remove-from-dbus-on-fail"
+EXTRA_OECONF_append_quanta-q71l = " --enable-negative-errno-on-fail"

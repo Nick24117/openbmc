@@ -36,14 +36,14 @@ CFLAGS += " -D_GNU_SOURCE -Wno-deprecated-declarations"
 LDFLAGS += " -L${STAGING_LIBDIR} -lutil -lcrypt"
 
 PACKAGECONFIG ??= ""
-PACKAGECONFIG += " ${@bb.utils.contains("DISTRO_FEATURES", "pam", "pam", "", d)}"
+PACKAGECONFIG += "${@bb.utils.filter('DISTRO_FEATURES', 'pam', d)}"
 PACKAGECONFIG[pam] = " , --without-pam, libpam, libpam"
 
 do_configure () {
     ./configure --prefix=${prefix} --exec-prefix=${exec_prefix}
     echo "INSTALLROOT=${D}" > MCONFIG
 
-    if [ "${@bb.utils.contains('PACKAGECONFIG', 'pam', 'pam', '', d)}" != "" ]; then
+    if [ "${@bb.utils.filter('PACKAGECONFIG', 'pam', d)}" ]; then
         echo "USE_PAM=1" >> MCONFIG
     fi
 
@@ -65,12 +65,12 @@ do_install () {
     'BINDIR=${bindir}' 'SBINDIR=${sbindir}' \
     'MANDIR=${mandir}' install
 
-    if [ "${@bb.utils.contains('PACKAGECONFIG', 'pam', 'pam', '', d)}" != "" ]; then
+    if [ "${@bb.utils.filter('PACKAGECONFIG', 'pam', d)}" ]; then
         install -d ${D}${sysconfdir}/pam.d
         install -m 0644 debian/hosts.equiv ${D}/${sysconfdir}
         install -m 0644 ${WORKDIR}/rexec.pam ${D}/${sysconfdir}/pam.d/rexec
         install -m 0644 ${WORKDIR}/rlogin.pam ${D}/${sysconfdir}/pam.d/rlogin
-        install -m 0664 ${WORKDIR}/rsh.pam ${D}/${sysconfdir}/pam.d/rsh
+        install -m 0644 ${WORKDIR}/rsh.pam ${D}/${sysconfdir}/pam.d/rsh
     fi
     cp ${WORKDIR}/rexec.xinetd.netkit  ${D}/${sysconfdir}/xinetd.d/rexec
     cp ${WORKDIR}/rlogin.xinetd.netkit  ${D}/${sysconfdir}/xinetd.d/rlogin

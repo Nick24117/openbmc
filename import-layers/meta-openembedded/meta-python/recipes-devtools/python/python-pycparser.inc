@@ -1,8 +1,15 @@
 SUMMARY = "Parser of the C language, written in pure Python"
+HOMEPAGE = "https://github.com/eliben/pycparser"
 LICENSE = "BSD-3-Clause"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=8fb364772b1441821d391591f340c35a"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=86f1cedb4e6410a88ce8e30b91079169"
 
-SRC_URI[md5sum] = "a2bc8d28c923b4fe2b2c3b4b51a4f935"
-SRC_URI[sha256sum] = "7959b4a74abdc27b312fed1c21e6caf9309ce0b29ea86b591fd2e99ecdf27f73"
+SRC_URI[md5sum] = "72370da54358202a60130e223d488136"
+SRC_URI[sha256sum] = "99a8ca03e29851d96616ad0404b4aad7d9ee16f25c9f9708a11faf2810f7b226"
 
 BBCLASSEXTEND = "native nativesdk"
+
+RDEPENDS_${PN}_class-target += "\
+    ${PYTHON_PN}-subprocess \
+    cpp \
+    cpp-symlinks \
+    "

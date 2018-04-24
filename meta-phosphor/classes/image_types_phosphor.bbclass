@@ -1,15 +1,6 @@
 # Base image class extension, inlined into every image.
 
-def build_uboot(d):
-    fstypes = d.getVar('IMAGE_FSTYPES', True).split()
-    if any([x.endswith('u-boot') for x in fstypes]):
-        return 'image_types_uboot'
-    return ''
-
-
-# Inherit u-boot classes if legacy uboot images are in use.
-IMAGE_TYPE_uboot = '${@build_uboot(d)}'
-inherit ${IMAGE_TYPE_uboot}
+inherit image_version
 
 # Phosphor image types
 #
@@ -18,23 +9,22 @@ inherit ${IMAGE_TYPE_uboot}
 # The reference BMC software update implementation.
 
 # Image composition
-FLASH_KERNEL_IMAGE ?= "${@bb.utils.contains('MACHINE_FEATURES', \
-        'obmc-ubi-fs', 'fitImage-${MACHINE}.bin', \
-        'fitImage-${INITRAMFS_IMAGE}-${MACHINE}.bin', d)}"
+FLASH_KERNEL_IMAGE ?= "fitImage-${INITRAMFS_IMAGE}-${MACHINE}.bin"
+FLASH_KERNEL_IMAGE_df-obmc-ubi-fs ?= "fitImage-${MACHINE}.bin"
+
 IMAGE_BASETYPE ?= "squashfs-xz"
 OVERLAY_BASETYPE ?= "jffs2"
 FLASH_UBI_BASETYPE ?= "${IMAGE_BASETYPE}"
 FLASH_UBI_OVERLAY_BASETYPE ?= "ubifs"
 
-IMAGE_TYPES += "overlay mtd-static mtd-static-alltar mtd-static-tar mtd-ubi mtd-ubi-tar"
+IMAGE_TYPES += "mtd-static mtd-static-alltar mtd-static-tar mtd-ubi mtd-ubi-tar"
 
-IMAGE_TYPEDEP_overlay = "${IMAGE_BASETYPE}"
 IMAGE_TYPEDEP_mtd-static = "${IMAGE_BASETYPE}"
 IMAGE_TYPEDEP_mtd-static-tar = "${IMAGE_BASETYPE}"
 IMAGE_TYPEDEP_mtd-static-alltar = "mtd-static"
 IMAGE_TYPEDEP_mtd-ubi = "${FLASH_UBI_BASETYPE}"
 IMAGE_TYPEDEP_mtd-ubi-tar = "${FLASH_UBI_BASETYPE}"
-IMAGE_TYPES_MASKED += "overlay mtd-static mtd-static-alltar mtd-static-tar mtd-ubi mtd-ubi-tar"
+IMAGE_TYPES_MASKED += "mtd-static mtd-static-alltar mtd-static-tar mtd-ubi mtd-ubi-tar"
 
 # Flash characteristics in KB unless otherwise noted
 FLASH_SIZE ?= "32768"
@@ -51,8 +41,12 @@ FLASH_ROFS_OFFSET ?= "4864"
 FLASH_RWFS_OFFSET ?= "28672"
 
 # UBI volume sizes in KB unless otherwise noted.
-FLASH_UBI_RWFS_SIZE ?= "4096"
-FLASH_UBI_RWFS_TXT_SIZE ?= "4MiB"
+FLASH_UBI_RWFS_SIZE ?= "6144"
+FLASH_UBI_RWFS_TXT_SIZE ?= "6MiB"
+
+SIGNING_KEY ?= "${STAGING_DIR_NATIVE}${datadir}/OpenBMC.priv"
+INSECURE_KEY = "${@'${SIGNING_KEY}' == '${STAGING_DIR_NATIVE}${datadir}/OpenBMC.priv'}"
+SIGNING_KEY_DEPENDS = "${@oe.utils.conditional('INSECURE_KEY', 'True', 'phosphor-insecure-signing-key-native:do_populate_sysroot', '', d)}"
 
 python() {
     # Compute rwfs LEB count and LEB size.
@@ -139,16 +133,27 @@ add_volume() {
 	fi
 }
 
-do_generate_ubi() {
+python do_generate_ubi() {
+        version_id = do_get_versionID(d)
+        d.setVar('VERSION_ID', version_id)
+        bb.build.exec_func("do_make_ubi", d)
+}
+do_generate_ubi[dirs] = "${S}/ubi"
+do_generate_ubi[depends] += " \
+        ${PN}:do_image_${@d.getVar('FLASH_UBI_BASETYPE', True).replace('-', '_')} \
+        virtual/kernel:do_deploy \
+        u-boot:do_populate_sysroot \
+        mtd-utils-native:do_populate_sysroot \
+        "
+
+do_make_ubi() {
 	cfg=ubinize-${IMAGE_NAME}.cfg
-
 	rm -f $cfg ubi-img
-
 	# Construct the ubinize config file
-	add_volume $cfg 0 static kernel-0 \
+	add_volume $cfg 0 static kernel-${VERSION_ID} \
 		${DEPLOY_DIR_IMAGE}/${FLASH_KERNEL_IMAGE}
 
-	add_volume $cfg 1 static rofs-0 \
+	add_volume $cfg 1 static rofs-${VERSION_ID} \
 		${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.${FLASH_UBI_BASETYPE}
 
 	add_volume $cfg 2 dynamic rwfs rwfs.${FLASH_UBI_OVERLAY_BASETYPE} ${FLASH_UBI_RWFS_TXT_SIZE}
@@ -168,8 +173,8 @@ do_generate_ubi() {
 	cd ${IMGDEPLOYDIR}
 	ln -sf ${IMAGE_NAME}.ubi.mtd ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.ubi.mtd
 }
-do_generate_ubi[dirs] = "${S}/ubi"
-do_generate_ubi[depends] += " \
+do_make_ubi[dirs] = "${S}/ubi"
+do_make_ubi[depends] += " \
         ${PN}:do_image_${@d.getVar('FLASH_UBI_BASETYPE', True).replace('-', '_')} \
         virtual/kernel:do_deploy \
         u-boot:do_populate_sysroot \
@@ -231,20 +236,24 @@ do_generate_static_alltar() {
 do_generate_static_alltar[vardepsexclude] = "DATETIME"
 do_generate_static_alltar[dirs] = "${S}/static"
 
-make_tar_of_images() {
+make_image_links() {
 	rwfs=$1
 	rofs=$2
-	type=$3
 	shift
 	shift
-	shift
-	extra_files="$@"
 
-	# Create some links to help make the tar archive
+	# Create some links to help make the tar archive in the format
+	# expected by phosphor-bmc-code-mgmt.
 	ln -sf ${DEPLOY_DIR_IMAGE}/u-boot.${UBOOT_SUFFIX} image-u-boot
 	ln -sf ${DEPLOY_DIR_IMAGE}/${FLASH_KERNEL_IMAGE} image-kernel
 	ln -sf ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.$rofs image-rofs
 	ln -sf rwfs.$rwfs image-rwfs
+}
+
+make_tar_of_images() {
+	type=$1
+	shift
+	extra_files="$@"
 
 	# Create the tar archive
 	tar -h -cvf ${IMGDEPLOYDIR}/${IMAGE_NAME}.$type.mtd.tar \
@@ -255,7 +264,8 @@ make_tar_of_images() {
 }
 
 do_generate_static_tar() {
-	make_tar_of_images ${OVERLAY_BASETYPE} ${IMAGE_BASETYPE} static
+	make_image_links ${OVERLAY_BASETYPE} ${IMAGE_BASETYPE}
+	make_tar_of_images static
 
 	# Maintain non-standard legacy link.
 	cd ${IMGDEPLOYDIR}
@@ -271,38 +281,64 @@ do_generate_static_tar[vardepsexclude] = "DATETIME"
 
 do_generate_ubi_tar() {
 	ln -sf ${S}/MANIFEST MANIFEST
-	make_tar_of_images ${FLASH_UBI_OVERLAY_BASETYPE} ${FLASH_UBI_BASETYPE} ubi MANIFEST
+	ln -sf ${S}/publickey publickey
+	make_image_links ${FLASH_UBI_OVERLAY_BASETYPE} ${FLASH_UBI_BASETYPE}
+	for file in image-u-boot image-kernel image-rofs image-rwfs MANIFEST publickey; do
+		openssl dgst -sha256 -sign ${SIGNING_KEY} -out "${file}.sig" $file
+	done
+	make_tar_of_images ubi MANIFEST publickey *.sig
 }
 do_generate_ubi_tar[dirs] = " ${S}/ubi"
 do_generate_ubi_tar[depends] += " \
         ${PN}:do_image_${@d.getVar('FLASH_UBI_BASETYPE', True).replace('-', '_')} \
         virtual/kernel:do_deploy \
         u-boot:do_populate_sysroot \
+        openssl-native:do_populate_sysroot \
+        ${SIGNING_KEY_DEPENDS} \
+        ${PN}:do_copy_signing_pubkey \
         "
 
-python do_generate_phosphor_manifest() {
-    import configparser
-    import io
-    path = d.getVar('STAGING_DIR_HOST', True) + d.getVar('sysconfdir', True)
-    path = os.path.join(path, 'os-release')
-    parser = configparser.SafeConfigParser(strict=False)
-    parser.optionxform = str
-    version = ''
-    with open(path, 'r') as fd:
-        buf = '[root]\n' + fd.read()
-        fd = io.StringIO(buf)
-        parser.readfp(fd)
-        version = parser['root']['VERSION_ID']
+def get_pubkey_basedir(d):
+    return os.path.join(
+        d.getVar('STAGING_DIR_TARGET', True),
+        d.getVar('sysconfdir', True).strip(os.sep),
+        'activationdata')
 
+def get_pubkey_type(d):
+    return os.listdir(get_pubkey_basedir(d))[0]
+
+def get_pubkey_path(d):
+    return os.path.join(
+        get_pubkey_basedir(d),
+        get_pubkey_type(d),
+        'publickey')
+
+python do_generate_phosphor_manifest() {
+    version = do_get_version(d)
     with open('MANIFEST', 'w') as fd:
         fd.write('purpose=xyz.openbmc_project.Software.Version.VersionPurpose.BMC\n')
         fd.write('version={}\n'.format(version.strip('"')))
+        fd.write('KeyType={}\n'.format(get_pubkey_type(d)))
+        fd.write('HashType=RSA-SHA256\n')
 }
 do_generate_phosphor_manifest[dirs] = "${S}"
 do_generate_phosphor_manifest[depends] += " \
         os-release:do_populate_sysroot \
+        phosphor-image-signing:do_populate_sysroot \
         "
 
+python do_copy_signing_pubkey() {
+    with open(get_pubkey_path(d), 'r') as read_fd:
+        with open('publickey', 'w') as write_fd:
+            write_fd.write(read_fd.read())
+}
+
+do_copy_signing_pubkey[dirs] = "${S}"
+do_copy_signing_pubkey[depends] += " \
+        phosphor-image-signing:do_populate_sysroot \
+        "
+
+addtask copy_signing_pubkey after do_rootfs
 addtask generate_phosphor_manifest after do_rootfs
 addtask generate_rwfs_static after do_rootfs
 addtask generate_rwfs_ubi after do_rootfs

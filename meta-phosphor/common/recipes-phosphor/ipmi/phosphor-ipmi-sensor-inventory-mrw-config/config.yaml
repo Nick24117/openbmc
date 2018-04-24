@@ -2,6 +2,8 @@ boot_count_sensor:
   path: /xyz/openbmc_project/state/host0
   serviceInterface: org.freedesktop.DBus.Properties
   readingType: readingAssertion
+  mutability: Mutability::Write|Mutability::Read
+  sensorNamePattern: nameProperty
   interfaces:
     xyz.openbmc_project.Control.Boot.RebootAttempts:
       AttemptsLeft:
@@ -13,6 +15,8 @@ os_boot_sensor:
   path: /xyz/openbmc_project/state/host0
   serviceInterface: org.freedesktop.DBus.Properties
   readingType: assertion
+  mutability: Mutability::Write|Mutability::Read
+  sensorNamePattern: nameProperty
   interfaces:
     xyz.openbmc_project.State.OperatingSystem.Status:
       OperatingSystemState:
@@ -40,6 +44,8 @@ fw_boot_sensor:
   path: /xyz/openbmc_project/state/host0
   serviceInterface: org.freedesktop.DBus.Properties
   readingType: eventdata2
+  mutability: Mutability::Write|Mutability::Read
+  sensorNamePattern: nameProperty
   interfaces:
     xyz.openbmc_project.State.Boot.Progress:
       BootProgress:
@@ -66,6 +72,8 @@ fw_boot_sensor:
 dimm_func_sensor:
   serviceInterface: xyz.openbmc_project.Inventory.Manager
   readingType: assertion
+  mutability: Mutability::Write|Mutability::Read
+  sensorNamePattern: nameLeaf
   interfaces:
     xyz.openbmc_project.State.Decorator.OperationalStatus:
       Functional:
@@ -90,6 +98,8 @@ dimm_func_sensor:
 cpu_func_sensor:
   serviceInterface: xyz.openbmc_project.Inventory.Manager
   readingType: assertion
+  mutability: Mutability::Write|Mutability::Read
+  sensorNamePattern: nameLeaf
   interfaces:
     xyz.openbmc_project.State.Decorator.OperationalStatus:
       Functional:
@@ -114,6 +124,8 @@ cpu_func_sensor:
 cpucore_func_sensor:
   serviceInterface: xyz.openbmc_project.Inventory.Manager
   readingType: assertion
+  mutability: Mutability::Write|Mutability::Read
+  sensorNamePattern: nameParentLeaf
   interfaces:
     xyz.openbmc_project.State.Decorator.OperationalStatus:
       Functional:
@@ -140,6 +152,8 @@ tpm_required_sensor:
   path: /xyz/openbmc_project/control/host0/TPMEnable
   serviceInterface: org.freedesktop.DBus.Properties
   readingType: assertion
+  mutability: Mutability::Write|Mutability::Read
+  sensorNamePattern: nameLeaf
   interfaces:
     xyz.openbmc_project.Control.TPM.Policy:
       TPMEnable:
@@ -154,6 +168,8 @@ tpm_required_sensor:
 gpu_func_sensor:
   serviceInterface: xyz.openbmc_project.Inventory.Manager
   readingType: assertion
+  mutability: Mutability::Write|Mutability::Read
+  sensorNamePattern: nameLeaf
   interfaces:
     xyz.openbmc_project.State.Decorator.OperationalStatus:
       Functional:
@@ -174,11 +190,23 @@ gpu_func_sensor:
             type: "bool"
             assert: true
             deassert: false
+# Field replacable doesn't come as a sensor data
+# but we know that GPU is Field replacable so setting
+# true in both cases.
+    xyz.openbmc_project.Inventory.Decorator.Replaceable:
+      FieldReplaceable:
+        Offsets:
+          0x07:
+            type: "bool"
+            assert: true
+            deassert: true
 
 host_auto_reboot_control_sensor:
   path: /xyz/openbmc_project/control/host0/auto_reboot
   serviceInterface: org.freedesktop.DBus.Properties
   readingType: assertion
+  mutability: Mutability::Write|Mutability::Read
+  sensorNamePattern: nameLeaf
   interfaces:
     xyz.openbmc_project.Control.Boot.RebootPolicy:
       AutoReboot:
@@ -189,3 +217,112 @@ host_auto_reboot_control_sensor:
           0x01:
             type: "bool"
             assert: true
+
+turbo_allowed_sensor:
+  path: /xyz/openbmc_project/control/host0/turbo_allowed
+  serviceInterface: org.freedesktop.DBus.Properties
+  readingType: assertion
+  mutability: Mutability::Read
+  sensorNamePattern: nameLeaf
+  interfaces:
+    xyz.openbmc_project.Control.Host.TurboAllowed:
+      TurboAllowed:
+        Offsets:
+          0x00:
+            assert: false
+            deassert: true
+            type: bool
+          0x01:
+            assert: true
+            deassert: false
+            type: bool
+
+cpucore_temp_sensor:
+  serviceInterface: org.freedesktop.DBus.Properties
+  readingType: readingData
+  mutability: Mutability::Write|Mutability::Read
+  sensorNamePattern: nameLeaf
+  multiplierM: 1
+  offsetB: -127
+  bExp: 0
+  rExp: 0
+  unit: xyz.openbmc_project.Sensor.Value.Unit.DegreesC
+  scale: -3
+  interfaces:
+    xyz.openbmc_project.Sensor.Value:
+      Value:
+        Offsets:
+          0xFF:
+            type: int64_t
+
+dimm_temp_sensor:
+  serviceInterface: org.freedesktop.DBus.Properties
+  readingType: readingData
+  mutability: Mutability::Write|Mutability::Read
+  sensorNamePattern: nameLeaf
+  multiplierM: 1
+  offsetB: -127
+  bExp: 0
+  rExp: 0
+  unit: xyz.openbmc_project.Sensor.Value.Unit.DegreesC
+  scale: -3
+  interfaces:
+    xyz.openbmc_project.Sensor.Value:
+      Value:
+        Offsets:
+          0xFF:
+            type: int64_t
+
+vrm_vdd_temp_sensor:
+  serviceInterface: org.freedesktop.DBus.Properties
+  readingType: readingData
+  mutability: Mutability::Write|Mutability::Read
+  sensorNamePattern: nameLeaf
+  multiplierM: 1
+  offsetB: -127
+  bExp: 0
+  rExp: 0
+  unit: xyz.openbmc_project.Sensor.Value.Unit.DegreesC
+  scale: -3
+  interfaces:
+    xyz.openbmc_project.Sensor.Value:
+      Value:
+        Offsets:
+          0xFF:
+            type: int64_t
+
+gpu_temp_sensor:
+  serviceInterface: org.freedesktop.DBus.Properties
+  readingType: readingData
+  mutability: Mutability::Write|Mutability::Read
+  sensorNamePattern: nameLeaf
+  multiplierM: 1
+  offsetB: -127
+  bExp: 0
+  rExp: 0
+  unit: xyz.openbmc_project.Sensor.Value.Unit.DegreesC
+  scale: -3
+  interfaces:
+    xyz.openbmc_project.Sensor.Value:
+      Value:
+        Offsets:
+          0xFF:
+            type: int64_t
+
+memory_temp_sensor:
+  serviceInterface: org.freedesktop.DBus.Properties
+  readingType: readingData
+  mutability: Mutability::Write|Mutability::Read
+  sensorNamePattern: nameLeaf
+  multiplierM: 1
+  offsetB: -127
+  bExp: 0
+  rExp: 0
+  unit: xyz.openbmc_project.Sensor.Value.Unit.DegreesC
+  scale: -3
+  interfaces:
+    xyz.openbmc_project.Sensor.Value:
+      Value:
+        Offsets:
+          0xFF:
+            type: int64_t

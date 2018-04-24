@@ -11,7 +11,6 @@
 # - obmc-host-ctl                     - OpenBMC host control
 # - obmc-host-ipmi                    - OpenBMC host IPMI
 # - obmc-host-state-mgmt              - OpenBMC host state management
-# - obmc-host-check-mgmt              - OpenBMC host state checking
 # - obmc-inventory                    - OpenBMC inventory support
 # - obmc-leds                         - OpenBMC LED support
 # - obmc-logging-mgmt                 - OpenBMC logging management
@@ -26,10 +25,6 @@ inherit core-image
 inherit obmc-phosphor-license
 inherit obmc-phosphor-utils
 
-# TODO: openbmc/openbmc#1407 - Remove with RHEL6 support deprecation.
-#     Set supported kernel back to RHEL6.4's kernel.
-SDK_OLDEST_KERNEL = "2.6.32"
-
 FEATURE_PACKAGES_obmc-bmc-state-mgmt ?= "packagegroup-obmc-apps-bmc-state-mgmt"
 FEATURE_PACKAGES_obmc-chassis-mgmt ?= "${@cf_enabled(d, 'obmc-phosphor-chassis-mgmt', 'virtual-obmc-chassis-mgmt')}"
 FEATURE_PACKAGES_obmc-chassis-state-mgmt ?= "packagegroup-obmc-apps-chassis-state-mgmt"
@@ -39,19 +34,22 @@ FEATURE_PACKAGES_obmc-flash-mgmt ?= "${@cf_enabled(d, 'obmc-phosphor-flash-mgmt'
 FEATURE_PACKAGES_obmc-host-ctl ?= "${@cf_enabled(d, 'obmc-host-ctl', 'virtual-obmc-host-ctl')}"
 FEATURE_PACKAGES_obmc-host-ipmi ?= "${@cf_enabled(d, 'obmc-host-ipmi', 'virtual-obmc-host-ipmi-hw')}"
 FEATURE_PACKAGES_obmc-host-state-mgmt ?= "packagegroup-obmc-apps-host-state-mgmt"
-FEATURE_PACKAGES_obmc-host-check-mgmt ?= "packagegroup-obmc-apps-host-check-mgmt"
 FEATURE_PACKAGES_obmc-inventory ?= "packagegroup-obmc-apps-inventory"
 FEATURE_PACKAGES_obmc-leds ?= "packagegroup-obmc-apps-leds"
-FEATURE_PACKAGES_obmc-logging-mgmt ?= "${@df_enabled(d, 'obmc-logging-mgmt', 'virtual-obmc-logging-mgmt')}"
-FEATURE_PACKAGES_obmc-net-ipmi ?= "${@df_enabled(d, 'obmc-net-ipmi', 'virtual-obmc-net-ipmi')}"
+FEATURE_PACKAGES_obmc-logging-mgmt ?= "${@df_enabled(d, 'obmc-logging-mgmt', 'packagegroup-obmc-apps-logging')}"
+FEATURE_PACKAGES_obmc-net-ipmi ?= "phosphor-ipmi-net"
 FEATURE_PACKAGES_obmc-sensors ?= "packagegroup-obmc-apps-sensors"
-FEATURE_PACKAGES_obmc-settings-mgmt ?= "${@df_enabled(d, 'obmc-settings-mgmt', 'virtual-obmc-settings-mgmt')}"
 FEATURE_PACKAGES_obmc-software ?= "packagegroup-obmc-apps-software"
 FEATURE_PACKAGES_obmc-system-mgmt ?= "${@df_enabled(d, 'obmc-phosphor-system-mgmt', 'virtual-obmc-system-mgmt')}"
 FEATURE_PACKAGES_obmc-debug-collector ?= "packagegroup-obmc-apps-debug-collector"
-FEATURE_PACKAGES_obmc-settings ?= "packagegroup-obmc-apps-settings"
+FEATURE_PACKAGES_obmc-settings-mgmt ?= "packagegroup-obmc-apps-settings"
 FEATURE_PACKAGES_obmc-network-mgmt ?= "packagegroup-obmc-apps-network"
 FEATURE_PACKAGES_obmc-user-mgmt ?= "packagegroup-obmc-apps-user-mgmt"
+
+# FIXME: phosphor-net-ipmi depends on phosphor-ipmi-host !?!? and
+# cannot be built on core-qemu machines because of the dependency
+# tree under phosphor-ipmi-host
+FEATURE_PACKAGES_obmc-net-ipmi_qemuall = ""
 
 # Install entire Phosphor application stack by default
 IMAGE_FEATURES += " \
@@ -64,26 +62,26 @@ IMAGE_FEATURES += " \
         obmc-host-ctl \
         obmc-host-ipmi \
         obmc-host-state-mgmt \
-        obmc-host-check-mgmt \
         obmc-inventory \
         obmc-leds \
         obmc-logging-mgmt \
         obmc-net-ipmi \
         obmc-sensors \
-        obmc-settings-mgmt \
         obmc-software \
         obmc-system-mgmt \
         obmc-user-mgmt \
         ssh-server-dropbear \
         obmc-debug-collector \
         obmc-network-mgmt \
-        obmc-settings \
-        ${@mf_enabled(d, 'obmc-ubi-fs', 'read-only-rootfs')} \
+        obmc-settings-mgmt \
         "
+
+IMAGE_FEATURES_append_df-obmc-ubi-fs = " read-only-rootfs"
 
 CORE_IMAGE_EXTRA_INSTALL_append = " bash \
         packagegroup-obmc-apps-extras \
         packagegroup-obmc-apps-extrasdev \
+        packagegroup-obmc-apps-extrasdevtools \
         i2c-tools \
         screen \
         obmc-console \
@@ -92,6 +90,7 @@ CORE_IMAGE_EXTRA_INSTALL_append = " bash \
         ffdc \
         rsync \
         rng-tools \
+        lrzsz \
         "
 
 OBMC_IMAGE_EXTRA_INSTALL ?= ""

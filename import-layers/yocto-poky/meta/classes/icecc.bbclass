@@ -42,6 +42,7 @@ def icecc_dep_prepend(d):
 
 DEPENDS_prepend += "${@icecc_dep_prepend(d)} "
 
+get_cross_kernel_cc[vardepsexclude] += "KERNEL_CC"
 def get_cross_kernel_cc(bb,d):
     kernel_cc = d.getVar('KERNEL_CC', False)
 
@@ -100,7 +101,7 @@ def use_icecc(bb,d):
     if icecc_is_allarch(bb, d):
         return "no"
 
-    pn = d.getVar('PN', True)
+    pn = d.getVar('PN')
 
     system_class_blacklist = []
     user_class_blacklist = (d.getVar('ICECC_USER_CLASS_BL', False) or "none").split()
@@ -115,7 +116,7 @@ def use_icecc(bb,d):
     # for one reason or the other
     # this is the old list (which doesn't seem to be valid anymore, because I was able to build
     # all these with icecc enabled)
-    # system_package_blacklist = [ "uclibc", "glibc", "gcc", "bind", "u-boot", "dhcp-forwarder", "enchant", "connman", "orbit2" ]
+    # system_package_blacklist = [ "glibc", "gcc", "bind", "u-boot", "dhcp-forwarder", "enchant", "connman", "orbit2" ]
     # when adding new entry, please document why (how it failed) so that we can re-evaluate it later
     # e.g. when there is new version
     # building libgcc-initial with icecc fails with CPP sanity check error if host sysroot contains cross gcc built for another target tune/variant
@@ -139,7 +140,7 @@ def use_icecc(bb,d):
     return "yes"
 
 def icecc_is_allarch(bb, d):
-    return d.getVar("PACKAGE_ARCH", True) == "all" or bb.data.inherits_class('allarch', d)
+    return d.getVar("PACKAGE_ARCH") == "all" or bb.data.inherits_class('allarch', d)
 
 def icecc_is_kernel(bb, d):
     return \

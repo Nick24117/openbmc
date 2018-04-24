@@ -2,10 +2,9 @@
 Description=Witherspoon Power Sequencer Runtime Monitor
 Wants=obmc-host-start-pre@0.target
 Before=obmc-host-start-pre@0.target
-Wants=vcs_on@0.service
-After=vcs_on@0.service
+After=obmc-power-on@0.target
 Conflicts=obmc-chassis-poweroff@0.target
 
 [Service]
-ExecStart=/usr/bin/env witherspoon-pseq-monitor -a runtime-monitor -i 1
+ExecStart=/usr/bin/env witherspoon-pseq-monitor -a runtime-monitor -i 500
 SyslogIdentifier=witherspoon-pseq-monitor

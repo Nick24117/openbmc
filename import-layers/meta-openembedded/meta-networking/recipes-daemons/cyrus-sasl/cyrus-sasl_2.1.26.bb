@@ -1,5 +1,6 @@
 SUMMARY = "Generic client/server library for SASL authentication"
 SECTION = "libs"
+HOMEPAGE = "http://asg.web.cmu.edu/sasl/"
 DEPENDS = "openssl virtual/db"
 LICENSE = "BSD"
 LIC_FILES_CHKSUM = "file://COPYING;md5=3f55e0974e3d6db00ca6f57f2d206396"
@@ -24,10 +25,8 @@ EXTRA_OECONF += "--with-dblib=berkeley \
                  andrew_cv_runpath_switch=none"
 
 PACKAGECONFIG ??= "ntlm \
-        ${@bb.utils.contains('DISTRO_FEATURES', 'ldap', 'ldap', '', d)} \
-        ${@bb.utils.contains('DISTRO_FEATURES', 'pam', 'pam', '', d)} \
-        ${@bb.utils.contains('DISTRO_FEATURES', 'ipv6', 'ipv6', '', d)} \
-        "
+    ${@bb.utils.filter('DISTRO_FEATURES', 'ipv6 ldap pam', d)} \
+"
 PACKAGECONFIG[gssapi] = "--enable-gssapi=yes,--enable-gssapi=no,krb5,"
 PACKAGECONFIG[pam] = "--with-pam,--without-pam,libpam,"
 PACKAGECONFIG[opie] = "--with-opie,--without-opie,opie,"

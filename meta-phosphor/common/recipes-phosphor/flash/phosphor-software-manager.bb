@@ -23,6 +23,8 @@ DBUS_PACKAGES = "${SOFTWARE_MGR_PACKAGES}"
 # handles the rest.
 SYSTEMD_PACKAGES = ""
 
+PACKAGECONFIG[verify_signature] = "--enable-verify_signature,--disable-verify_signature"
+
 inherit autotools pkgconfig
 inherit obmc-phosphor-dbus-service
 inherit pythonnative
@@ -32,6 +34,7 @@ DEPENDS += " \
     sdbusplus \
     phosphor-dbus-interfaces \
     phosphor-logging \
+    sdbus++-native \
 "
 
 RDEPENDS_${PN}-version += " \
@@ -49,6 +52,7 @@ RDEPENDS_${PN}-updater += " \
     phosphor-dbus-interfaces \
     sdbusplus \
     virtual-obmc-image-manager \
+    bash \
 "
 
 RPROVIDES_${PN}-version += " \
@@ -78,16 +82,18 @@ SYSTEMD_SERVICE_${PN}-updater += " \
     reboot-guard-enable.service \
     reboot-guard-disable.service \
     obmc-flash-bmc-cleanup.service \
-    obmc-flash-bmc-reset.service \
+    obmc-flash-bmc-mirroruboot.service \
     "
 
 # Name of the mtd device where the ubi volumes should be created
 BMC_RW_MTD ??= "bmc"
 BMC_RO_MTD ??= "bmc"
 BMC_KERNEL_MTD ??= "bmc"
+BMC_RW_SIZE ??= "0x600000"
 SYSTEMD_SUBSTITUTIONS += "RW_MTD:${BMC_RW_MTD}:obmc-flash-bmc-ubirw.service"
 SYSTEMD_SUBSTITUTIONS += "RO_MTD:${BMC_RO_MTD}:obmc-flash-bmc-ubiro@.service"
 SYSTEMD_SUBSTITUTIONS += "KERNEL_MTD:${BMC_KERNEL_MTD}:obmc-flash-bmc-ubiro@.service"
+SYSTEMD_SUBSTITUTIONS += "RW_SIZE:${BMC_RW_SIZE}:obmc-flash-bmc-ubirw.service"
 
 SRC_URI += "file://obmc-flash-bmc"
 do_install_append() {
