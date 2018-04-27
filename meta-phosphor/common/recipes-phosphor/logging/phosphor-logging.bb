@@ -33,7 +33,7 @@ FILES_${PN}-elog += "${elog_dir}"
 
 FOXCONN_BRANCH="foxconn-g2"
 SRC_URI += "git://github.com/foxconn-bmc-ks/phosphor-logging;branch=${FOXCONN_BRANCH}"
-SRCREV = "7e9f33242e80f37742050682c4b62700606e486a"
+SRCREV = "81bf61d77ce4458604a69c29cba0b79f429632e8"
 
 S = "${WORKDIR}/git"
 

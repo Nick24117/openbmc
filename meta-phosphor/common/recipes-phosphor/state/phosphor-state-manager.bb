@@ -138,6 +138,6 @@ HOST_RST_RBT_ATTEMPTS_SVC_FMT = "../${HOST_RST_RBT_ATTEMPTS_SVC}:${HOST_START_TG
 SYSTEMD_LINK_${PN}-host += "${@compose_list_zip(d, 'HOST_RST_RBT_ATTEMPTS_SVC_FMT', 'OBMC_HOST_INSTANCES', 'OBMC_HOST_INSTANCES')}"
 
 SRC_URI += "git://github.com/foxconn-bmc-ks/phosphor-state-manager;protocol=git;branch=${FOXCONN_BRANCH}"
-SRCREV = "5a8c45191b79c38909ea4fa19b0bd7d560bbff81"
+SRCREV = "ac303125b38ab5abfb7d6d1278aae20082f16d51"
 
 S = "${WORKDIR}/git"

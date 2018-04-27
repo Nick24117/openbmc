@@ -104,6 +104,6 @@ do_install_append() {
 
 FOXCONN_BRANCH="foxconn-g2"
 SRC_URI += "git://github.com/foxconn-bmc-ks/phosphor-bmc-code-mgmt;branch=${FOXCONN_BRANCH}"
-SRCREV = "6a6277517d3be761c0d1f88dcafa6fb0a0ca4d9d"
+SRCREV = "6f9fa3f3a1ec8d5deaa9b6f82e4eaccc553f50f2"
 
 S = "${WORKDIR}/git"

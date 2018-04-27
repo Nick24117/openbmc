@@ -7,10 +7,10 @@ PE = "1"
 
 # We use the revision in order to avoid having to fetch it from the
 # repo during parse
-SRCREV = "e4c85cd4de96bfdff7b614731a044db11815ff0c"
+SRCREV = "0a3d36de39e80e497cd9ccd1522a9e86e817d906"
 
-UBRANCH = "v2016.07-aspeed-openbmc"
-SRC_URI = "git://git@github.com/openbmc/u-boot.git;branch=${UBRANCH};protocol=https"
+UBRANCH = "foxconn-v2016.07-aspeed-openbmc-g2"
+SRC_URI = "git://git@github.com/foxconn-bmc-ks/u-boot.git;branch=${UBRANCH};protocol=https"
 
 S = "${WORKDIR}/git"
 
