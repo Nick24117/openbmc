@@ -4,6 +4,7 @@ import os
 import sys
 import dbus
 import subprocess
+import time
 from obmc.dbuslib.bindings import get_dbus
 
 bus = get_dbus()
@@ -144,16 +145,20 @@ _add_inventory_FPDB(g_fru_inventory_config)
 _add_inventory_BP(g_fru_inventory_config)
 
 def execute_ocs_fru(config):
-    try:
-        fru_i2c_bus = config['FRU_I2C_BUS']
-        fru_i2c_slave = config['FRU_I2C_SLAVE']
-        ocs_fru_cmd = INVENTORY_OCS_FRU_COMMAND % (fru_i2c_bus, fru_i2c_slave)
-        if 'FRU_EEPROM_PRODUCT_TYPE' in config:
-            ocs_fru_cmd += " -fru_eeprom_product_type " + str(config['FRU_EEPROM_PRODUCT_TYPE'])
-        ocs_fru_cmd_data = subprocess.check_output(ocs_fru_cmd, shell=True)
-        return ocs_fru_cmd_data.replace('\x00', '') #skip garbage message
-    except:
-        print "Fru-inventory-gen: execute_ocs_fru fail:" + ocs_fru_cmd
+	retry = 10
+	while retry >= 0:
+	    try:
+	        fru_i2c_bus = config['FRU_I2C_BUS']
+	        fru_i2c_slave = config['FRU_I2C_SLAVE']
+	        ocs_fru_cmd = INVENTORY_OCS_FRU_COMMAND % (fru_i2c_bus, fru_i2c_slave)
+	        if 'FRU_EEPROM_PRODUCT_TYPE' in config:
+	            ocs_fru_cmd += " -fru_eeprom_product_type " + str(config['FRU_EEPROM_PRODUCT_TYPE'])
+	        ocs_fru_cmd_data = subprocess.check_output(ocs_fru_cmd, shell=True)
+	        return ocs_fru_cmd_data.replace('\x00', '') #skip garbage message
+	    except:
+	        print "Fru-inventory-gen: execute_ocs_fru fail:" + ocs_fru_cmd
+	    retry-=1
+	    time.sleep(20)
         return ""
 
 def parse_ocs_fru_data_mapping_inventory_property(ocs_fru_cmd_data, config):
