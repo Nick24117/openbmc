@@ -10,7 +10,7 @@ DEPENDS = "shadow-native"
 DEPENDS_class-native = ""
 DEPENDS_class-nativesdk = ""
 
-SRC_URI = "http://pkg-shadow.alioth.debian.org/releases/${BPN}-${PV}.tar.xz \
+SRC_URI = "http://ftp.lfs-matrix.net/pub/clfs/conglomeration/shadow/shadow-4.2.1.tar.xz \
            file://shadow-4.1.3-dots-in-usernames.patch \
            file://usermod-fix-compilation-failure-with-subids-disabled.patch \
            file://fix-installation-failure-with-subids-disabled.patch \

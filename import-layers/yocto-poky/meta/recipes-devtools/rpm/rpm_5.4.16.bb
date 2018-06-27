@@ -50,7 +50,7 @@ DEPENDS_append_class-native = " file-replacement-native"
 # based on CVS
 S = "${WORKDIR}/rpm-5.4.15"
 
-SRC_URI = "http://www.rpm5.org/files/rpm/rpm-5.4/rpm-5.4.15-0.20140824.src.rpm;name=srpm;extract=rpm-5.4.15.tar.gz \
+SRC_URI = "http://sources.webos-ports.org/downloads/rpm-5.4.15-0.20140824.src.rpm;name=srpm;extract=rpm-5.4.15.tar.gz \
 	   http://downloads.yoctoproject.org/releases/rpm5/rpm-5.4.15-to-5.4.16-20160225.patch.gz;name=rpm-patch \
 	   http://downloads.yoctoproject.org/releases/rpm5/syck-5.4.15-to-5.4.16-20160225.patch.gz;name=syck-patch \
 	   http://downloads.yoctoproject.org/releases/rpm5/beecrypt-5.4.15-to-5.4.16-20160225.patch.gz;name=beecrypt-patch \

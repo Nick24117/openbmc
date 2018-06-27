@@ -6,15 +6,15 @@ SECTION = "libs"
 LICENSE = "Zlib"
 LIC_FILES_CHKSUM = "file://zlib.h;beginline=4;endline=23;md5=fde612df1e5933c428b73844a0c494fd"
 
-SRC_URI = "http://www.zlib.net/${BPN}-${PV}.tar.xz \
+SRC_URI = "https://zlib.net/fossils/${BPN}-${PV}.tar.gz \
            file://remove.ldconfig.call.patch \
            file://Makefile-runtests.patch \
            file://ldflags-tests.patch \
            file://run-ptest \
            "
 
-SRC_URI[md5sum] = "28f1205d8dd2001f26fec1e8c2cebe37"
-SRC_URI[sha256sum] = "831df043236df8e9a7667b9e3bb37e1fcb1220a0f163b6de2626774b9590d057"
+SRC_URI[md5sum] = "44d667c142d7cda120332623eab69f40"
+SRC_URI[sha256sum] = "36658cb768a54c1d4dec43c3116c27ed893e88b02ecfcb44f2166f9c0b7f2a0d"
 
 RDEPENDS_${PN}-ptest += "make"
 

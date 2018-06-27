@@ -7,7 +7,7 @@ LIC_FILES_CHKSUM = "file://COPYING;md5=751419260aa954499f7abaabaa882bbe \
 
 DEPENDS = "sysfsutils virtual/libiconv bison-native flex-native rrdtool"
 
-SRC_URI = "http://dl.lm-sensors.org/lm-sensors/releases/lm_sensors-${PV}.tar.bz2 \
+SRC_URI = " https://ftp.gwdg.de/pub/linux/misc/lm-sensors/lm_sensors-${PV}.tar.bz2 \
            file://fancontrol.init \
            file://sensord.init \
            file://0001-lmsensors-sensors-detect-print-a-special-message-whe.patch \

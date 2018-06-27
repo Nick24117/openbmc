@@ -10,7 +10,7 @@ PR = "${INC_PR}.0"
 # Note: the upstream sources are not distributed with a license file.
 # LICENSE-OASIS is included as a "patch" to workaround this. When
 # upgrading this recipe, please verify whether this is still needed.
-SRC_URI = "http://docbook.org/sgml/4.1/docbk41.zip \
+SRC_URI = "https://docbook.org/sgml/4.1/docbk41.zip \
            file://LICENSE-OASIS"
 
 SRC_URI[md5sum] = "489f6ff2a2173eb1e14216c10533ede2"
