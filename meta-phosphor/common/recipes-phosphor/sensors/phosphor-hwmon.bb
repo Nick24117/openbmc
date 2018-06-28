@@ -33,13 +33,13 @@ RRECOMMENDS_${PN} += "${VIRTUAL-RUNTIME_phosphor-hwmon-config}"
 FILES_max31785-msl = "${bindir}/max31785-msl"
 RDEPENDS_max31785-msl = "${VIRTUAL-RUNTIME_base-utils} i2c-tools"
 
-FOXCONN_BRANCH="foxconn-g2"
+FOXCONN_BRANCH="foxconn-g2_new"
 SRC_URI += "git://github.com/foxconn-bmc-ks/phosphor-hwmon;branch=${FOXCONN_BRANCH}"
 SRC_URI += "file://70-hwmon.rules"
 SRC_URI += "file://70-iio.rules"
 SRC_URI += "file://start_hwmon.sh"
 
-SRCREV = "743eba019385711da24c20c49ad7b6789a5c36b5"
+SRCREV = "6106dd7d42bb5a85054db1601e1bc8cf744f902f"
 
 S = "${WORKDIR}/git"
 

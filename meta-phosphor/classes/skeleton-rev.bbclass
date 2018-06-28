@@ -1,3 +1,3 @@
 DEPENDS += "i2c-tools"
-SRCREV ?= "c21411d59c4bd9105d75624c7db728f127e189a2"
-SKELETON_URI ?= "git://github.com/foxconn-bmc-ks/skeleton;branch=foxconn-g2"
+SRCREV ?= "03e62c0d7d9bd3b6bd937ad9582391ac1b4c5c32"
+SKELETON_URI ?= "git://github.com/foxconn-bmc-ks/skeleton;branch=foxconn-g2_new"

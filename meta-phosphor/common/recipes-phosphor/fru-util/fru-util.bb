@@ -1,4 +1,6 @@
 DESCRIPTION = "IPMI over LAN (RMCP/IPMIv1.5) Server"
+LICENSE = "Apache-2.0"
+PV = "v5.10-rc3"
 
 HOMEPAGE = "https://github.com/foxconn-bmc-ks/fru-util"
 
@@ -13,24 +15,25 @@ INHIBIT_PACKAGE_STRIP = "1"
 INHIBIT_PACKAGE_DEBUG_SPLIT = "1"
 RDEPENDS_${PN} = "bash python"
 
+EXTRA_OEMAKE += " CC='${CC}' LD='${LD}' LIB_VERSION=${PV}  V=1"
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
 FOXCONN_BRANCH="foxconn-g2"
 SRC_URI = "git://github.com/foxconn-bmc-ks/fru-util;branch=${FOXCONN_BRANCH}"
 SRC_URI += "file://fru-inventory-gen.py"
-SRCREV = "de10d83258a3ddcdab779993cd6fb3f9208e85cb"
+SRCREV = "5066be256fc2538374445e4942984262aced5f63"
 S = "${WORKDIR}/git"
 SYSTEMD_SERVICE_${PN} += "fru-inventory-gen.service"
 
 do_compile() {
-        oe_runmake
+        rm -rf ${S}/Ocslog/zlog.h
+        rm -rf ${S}/fru-util/obj
+        rm -rf ${S}/fru-util/bin
+        oe_runmake all
 }
 
 do_install() {
-        install -Dm755 ${B}/fru-util/bin/ocs-fru ${D}/${sbindir}/ocs-fru
-        install -Dm755 ${B}/frui2clib/lib/libocsfrui2c.so ${D}/${libdir}/libocsfrui2c.so
-        install -Dm755 ${B}/Ocslog/lib/libocslog.so ${D}/${libdir}/libocslog.so
-        install -Dm755 ${B}/SemLock/lib/libocslock.so ${D}/${libdir}/libocslock.so
-        install -m0755 ${WORKDIR}/fru-inventory-gen.py ${D}/${sbindir}/fru-inventory-gen.py
+        oe_runmake  PREFIX=${D} install
+        install -Dm0755 ${WORKDIR}/fru-inventory-gen.py ${D}/${sbindir}/fru-inventory-gen.py
 }

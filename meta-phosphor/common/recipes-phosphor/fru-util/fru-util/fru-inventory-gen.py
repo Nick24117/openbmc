@@ -12,7 +12,7 @@ bus = get_dbus()
 INVENTORY_MANAGER_OBJECT_PATH = '/xyz/openbmc_project/inventory'
 INVENTORY_MANAGER_DBUS_BUS_NAME = 'xyz.openbmc_project.Inventory.Manager'
 INVENTORY_MANAGER_DBUS_INTF_NAME = 'xyz.openbmc_project.Inventory.Manager'
-INVENTORY_OCS_FRU_COMMAND = 'ocs-fru -c %d -s %x -r'
+INVENTORY_OCS_FRU_COMMAND = '/usr/bin/ocs-fru -c %d -s %x -r'
 INVENTORY_OBJECT_PATH_ROOT = '/xyz/openbmc_project/inventory'
 
 class EM_FRU_INVENTORY_INTERFACE_NAME:

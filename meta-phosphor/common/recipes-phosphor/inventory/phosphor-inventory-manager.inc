@@ -1,5 +1,6 @@
 HOMEPAGE = "http://github.com/openbmc/phosphor-inventory-manager"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=e3fc50a88d0a364313df4b21ef20c29e"
-SRC_URI = "git://github.com/openbmc/phosphor-inventory-manager"
-SRCREV = "33e217952d5791580b4d1d711da1d6010731fbca"
+FOXCONN_BRANCH="foxconn-g2_new"
+SRC_URI += "git://github.com/foxconn-bmc-ks/phosphor-inventory-manager;branch=${FOXCONN_BRANCH}"
+SRCREV = "7c40f129ff0f812510ad872f5960f811be8e95f2"

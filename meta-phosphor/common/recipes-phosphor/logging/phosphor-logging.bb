@@ -33,19 +33,19 @@ FILES_${PN}-test = "${bindir}/*-test"
 PACKAGE_BEFORE_PN += "${PN}-elog"
 FILES_${PN}-elog += "${elog_dir}"
 
-FOXCONN_BRANCH="foxconn-g2"
+FOXCONN_BRANCH="foxconn-g2_new"
 SRC_URI += "git://github.com/foxconn-bmc-ks/phosphor-logging;branch=${FOXCONN_BRANCH}"
-SRCREV = "7e9f33242e80f37742050682c4b62700606e486a"
+SRCREV = "808c962d7dae3d1ee3a1ca1530edb6dffcc03142"
 
 S = "${WORKDIR}/git"
 
 # Do not DEPEND on the specified packages for native build
 # as they will not be available in host machine
-DEPENDS_remove_class-native =   " \
+DEPENDS_remove_class-native = " \
         virtual/phosphor-logging-callouts \
-        sdbus++-native \
-        systemd-native \
-        cereal-native \
+        sdbus++ \
+        systemd \
+        cereal \
         "
 
 # Do not DEPEND on the specified packages for native SDK build
@@ -53,10 +53,9 @@ DEPENDS_remove_class-native =   " \
 DEPENDS_remove_class-nativesdk = " \
         virtual/phosphor-logging-callouts \
         sdbus++-native \
-        nativesdk-cereal \
-        nativesdk-systemd \
-        nativesdk-phosphor-dbus-interfaces \
-        nativesdk-phosphor-logging \
+        cereal \
+        systemd \
+        phosphor-dbus-interfaces \
         "
 
 PACKAGECONFIG ??= "metadata-processing install_scripts"

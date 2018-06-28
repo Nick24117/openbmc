@@ -32,6 +32,7 @@ DEPENDS += " \
     sdbusplus \
     phosphor-dbus-interfaces \
     phosphor-logging \
+    sdbus++-native \
 "
 
 RDEPENDS_${PN}-version += " \
@@ -96,8 +97,8 @@ do_install_append() {
     install -d ${D}/usr/local
 }
 
-FOXCONN_BRANCH="foxconn-g2"
+FOXCONN_BRANCH="foxconn-g2_new"
 SRC_URI += "git://github.com/foxconn-bmc-ks/phosphor-bmc-code-mgmt;branch=${FOXCONN_BRANCH}"
-SRCREV = "6a6277517d3be761c0d1f88dcafa6fb0a0ca4d9d"
+SRCREV = "0b50dad9d083e5d6f8e9ca83167dc244a65c6e47"
 
 S = "${WORKDIR}/git"
