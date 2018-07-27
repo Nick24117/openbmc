@@ -3,6 +3,7 @@
 
 if [ "$1" == "disable" ]; then
     value='false'
+    rm -rf /run/initramfs/max_occ_*
 elif [ "$1" == "enable" ]; then
     value='true'
 else
