@@ -1,6 +1,6 @@
-KBRANCH ?= "foxconn-g2-4.13 "
+KBRANCH ?= "test_build "
 LINUX_VERSION ?= "4.13.16"
 
-SRCREV="26c36e709f28dd5946f1333dce2d9710281cff20"
+SRCREV="c6cdbea80a6304b3b869e9819cd9891065a398aa"
 
 require linux-obmc.inc
