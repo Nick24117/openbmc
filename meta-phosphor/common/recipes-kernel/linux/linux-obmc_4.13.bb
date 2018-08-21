@@ -1,6 +1,6 @@
 KBRANCH ?= "test_build "
 LINUX_VERSION ?= "4.13.16"
 
-SRCREV="c6cdbea80a6304b3b869e9819cd9891065a398aa"
+SRCREV="6f84ee5d57c6db1533d510ffd58193dfa2ab55c8"
 
 require linux-obmc.inc
